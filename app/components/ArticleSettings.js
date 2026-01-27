@@ -1,13 +1,22 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
-export default function ArticleSettings() {
+export default function ArticleSettings({ onDataChange }) {
   const [category, setCategory] = useState('Technology');
   const [tags, setTags] = useState(['JavaScript', 'Web Development']);
   const [tagInput, setTagInput] = useState('');
   const [featuredImage, setFeaturedImage] = useState(null);
   const imageInputRef = useRef(null);
+
+  // Send data to parent whenever settings change
+  useEffect(() => {
+    onDataChange?.({ 
+      category, 
+      tags, 
+      coverImage: featuredImage 
+    });
+  }, [category, tags, featuredImage, onDataChange]);
 
   const categories = [
     'Technology',

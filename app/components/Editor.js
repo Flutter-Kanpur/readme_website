@@ -1,14 +1,34 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Toolbar from "./Toolbar";
 
-export default function Editor() {
+export default function Editor({ onDataChange }) {
   const editorRef = useRef(null);
+  const titleRef = useRef(null);
   const fileInputRef = useRef(null);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [savedSelection, setSavedSelection] = useState(null);
+
+  useEffect(() => {
+    const handleChange = () => {
+      const title = titleRef.current?.value || '';
+      const content = editorRef.current?.innerHTML || '';
+      onDataChange?.({ title, content });
+    };
+
+    const titleElement = titleRef.current;
+    const editorElement = editorRef.current;
+
+    titleElement?.addEventListener('input', handleChange);
+    editorElement?.addEventListener('input', handleChange);
+
+    return () => {
+      titleElement?.removeEventListener('input', handleChange);
+      editorElement?.removeEventListener('input', handleChange);
+    };
+  }, [onDataChange]);
 
   const handleFormat = (command, value = null) => {
     document.execCommand(command, false, value);
@@ -236,6 +256,7 @@ export default function Editor() {
       </div>
 
       <input
+        ref={titleRef}
         type="text"
         placeholder="Title of your story..."
         className="
