@@ -1,13 +1,5 @@
 "use client";
-
-import { useRouter } from "next/navigation";
-
-export default function CustomButton({ href, children, className = "" }) {
-  const router = useRouter();
-
-  const handleClick = () => {
-    router.push(href);
-  };
+export default function CustomButton({ handleClick, children, className = "" }) {
 
   return (
     <button

@@ -1,32 +1,75 @@
+'use client'
+import { useParams } from 'next/navigation'
 import Navbar from '@/components/Navbar/Navbar'
 import ProfileHeader from '@/components/ProfileHeader/ProfileHeader'
 import UserStats from '@/components/UserStats/UserStats'
 import ArticleCard from '@/components/ArticleCard/ArticleCard'
-
+import { useEffect, useState } from 'react'
 import {
   getProfileById,
   getPublishedBlogsByAuthor,
   getAuthorByBlogId
-} from '@/lib/queries'
-import Footer from '../../../components/Footer.jsx/Footer'
+} from '@/app/lib/supabase/queries'
+
+import Footer from '@/components/Footer/Footer'
 import './styles.css'
 
-export default async function ProfilePage({ params }) {
-  const { userId } = await params
+export default function ProfilePage() {
+  const { userid } = useParams()
+  const [profile, setProfile] = useState(null)
+  const [blogs, setBlogs] = useState([])
+  const [loading, setLoading] = useState(true)
 
+  useEffect(() => {
+    async function loadProfile() {
+      if (!userid) return
 
-  if (!userId) {
-  return (
-    <div style={{ padding: '40px', textAlign: 'center' }}>
-      <h2>Invalid profile URL</h2>
-      <p>No user ID provided.</p>
-    </div>
-  )
-}
+      try {
+        setLoading(true)
 
+        const profileData = await getProfileById(userid)
+        if (!profileData) return
 
-  // Fetch profile by ID
-  const profile = await getProfileById(userId)
+        setProfile(profileData)
+
+        const blogsData = await getPublishedBlogsByAuthor(profileData.id)
+
+        const blogsWithAuthors = await Promise.all(
+          blogsData.map(async (blog) => {
+            const author = await getAuthorByBlogId(blog.blog_id)
+            return {
+              ...blog,
+              author
+            }
+          })
+        )
+
+        setBlogs(blogsWithAuthors)
+      } catch (err) {
+        console.error('Profile load error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProfile()
+  }, [userid])
+  if (!userid) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <h2>Invalid profile URL</h2>
+        <p>No user ID provided.</p>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <h2>Loading profile...</h2>
+      </div>
+    )
+  }
 
   if (!profile) {
     return (
@@ -35,18 +78,6 @@ export default async function ProfilePage({ params }) {
       </div>
     )
   }
-
-  // Fetch user's published blogs
-  const blogs = await getPublishedBlogsByAuthor(profile.id)
-  const blogsWithAuthors = await Promise.all(
-    blogs.map(async (blog) => {
-      const author = await getAuthorByBlogId(blog.blog_id)
-      return {
-        ...blog,
-        author
-      }
-    })
-  )
 
   return (
     <div className="page">
@@ -65,14 +96,14 @@ export default async function ProfilePage({ params }) {
                 <p className="empty">No published articles yet.</p>
               )}
 
-              {blogsWithAuthors.map(blog => (
+              {blogs.map(blog => (
                 <ArticleCard key={blog.blog_id} blog={blog} />
               ))}
             </div>
           </div>
 
           {/* Sidebar */}
-          <div>
+          <div className="sidebar">
             <UserStats profile={profile} />
           </div>
         </div>
@@ -82,72 +113,3 @@ export default async function ProfilePage({ params }) {
     </div>
   )
 }
-
-
-
-
-
-
-
-
-// import Navbar from '@/components/layout/Navbar'
-// import ProfileHeader from '@/components/profile/ProfileHeader'
-// import UserStats from '@/components/profile/UserStats'
-// import ArticleCard from '@/components/blog/ArticleCard'
-
-// export default function ProfilePage({ params }) {
-//   return (
-//     <div style={styles.page}>
-//       <Navbar />
-
-//       <div style={styles.container}>
-//         <ProfileHeader />
-
-//         <div style={styles.grid}>
-//           <div>
-//             <h2 style={styles.sectionTitle}>
-//               Articles by {params.username}
-//             </h2>
-
-//             <div style={styles.articles}>
-//               <ArticleCard />
-//               <ArticleCard />
-//               <ArticleCard />
-//             </div>
-//           </div>
-
-//           <div>
-//             <UserStats />
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   )
-// }
-
-// const styles = {
-//   page: {
-//     minHeight: '100vh',
-//     background: '#f5f7fb'
-//   },
-//   container: {
-//     maxWidth: '1100px',
-//     margin: '0 auto',
-//     padding: '40px 20px'
-//   },
-//   grid: {
-//     display: 'grid',
-//     gridTemplateColumns: '3fr 1fr',
-//     gap: '40px',
-//     marginTop: '40px'
-//   },
-//   articles: {
-//     display: 'flex',
-//     flexDirection: 'column',
-//     gap: '20px'
-//   },
-//   sectionTitle: {
-//     fontSize: '22px',
-//     marginBottom: '20px'
-//   }
-// }

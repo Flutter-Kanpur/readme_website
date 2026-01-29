@@ -1,52 +1,6 @@
-// import Link from 'next/link'
-
-// export default function Navbar() {
-//   return (
-//     <nav style={styles.nav}>
-//       <Link href="/" style={styles.logo}>
-//         Readme
-//       </Link>
-
-//       <div style={styles.links}>
-//         <Link href="/" style={styles.link}>Home</Link>
-//         <Link href="/articles" style={styles.link}>Articles</Link>
-//         <Link href="/event" style={styles.link}>Event</Link>
-//         <Link href="/community" style={styles.link}>Community</Link>
-//         <Link href="/team" style={styles.link}>Team</Link>
-//       </div>
-//     </nav>
-//   )
-// }
-
-// const styles = {
-//   nav: {
-//     display: 'flex',
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     padding: '16px 32px',
-//     borderBottom: '1px solid #eee',
-//     background: '#fff'
-//   },
-//   logo: {
-//     fontSize: '22px',
-//     fontWeight: '700',
-//     textDecoration: 'none',
-//     color: '#000'
-//   },
-//   links: {
-//     display: 'flex',
-//     gap: '20px'
-//   },
-//   link: {
-//     textDecoration: 'none',
-//     color: '#444',
-//     fontSize: '14px'
-//   }
-// }
-
-
 import Link from "next/link";
 import CustomButton from "../Button/CustomButton";
+import { useRouter } from "next/navigation";
 export default function Navbar() {
 
    const navLinks = [
@@ -56,6 +10,12 @@ export default function Navbar() {
   { name: "Events", href: "/events" },
   { name: "Team", href: "/team" }
 ];
+
+  const router = useRouter();
+
+  const handleClick = () => {
+    router.push('/login');
+  };
 
   return (
     <nav className="w-full border-b border-gray-200 bg-white">
@@ -74,7 +34,7 @@ export default function Navbar() {
             </Link>
           ))}
         </div>
-        <CustomButton href={'/login'}>
+        <CustomButton handleClick={handleClick}>
           Login
         </CustomButton>
       </div>

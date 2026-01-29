@@ -2,7 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 import './styles.css'
 
-export default function ArticleCardAuthorInfo({author}){
+export default function ArticleCardAuthorInfo({author, createdAt}) {
     return (
         <div className='wrapper'>
             <Image
@@ -15,27 +15,14 @@ export default function ArticleCardAuthorInfo({author}){
 
             <div>
                 <p className = 'name'>{author.name}</p>
+                {createdAt && (
+                        <div className="article-meta">
+                            <span>
+                                {new Date(createdAt).toDateString()}
+                            </span>
+                        </div>
+                    )}
             </div>
         </div>
     )
 }
-
-// const styles = {
-//   wrapper: {
-//     display: 'flex',
-//     gap: '10px',
-//   },
-//   avatar: {
-//     width: '26px',
-//     height: '26px',
-//     borderRadius: '50%',
-//     objectFit: 'cover',
-//     cursor: 'pointer'
-//   },
-//   name: {
-//     fontSize: '16px',
-//     fontWeight: '100',
-//     margin: 0,
-//     color: '#000'
-//   },
-// }
