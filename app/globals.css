@@ -17,3 +17,16 @@ html, body {
   color: var(--foreground);
   font-family: "Product Sans", Arial, Helvetica, sans-serif;
 }
+
+.grid-background {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0; /* keep it behind content */
+
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(to right, #E5E7EB 1px, transparent 1px),
+    linear-gradient(to bottom, #E5E7EB 1px, transparent 1px);
+  background-size: 40px 40px;
+}
