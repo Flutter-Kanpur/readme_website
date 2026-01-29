@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Icon from './Icon';
+import './ArticleSettings.css';
 
 export default function ArticleSettings({ onDataChange }) {
   const [category, setCategory] = useState('Technology');
@@ -9,13 +11,8 @@ export default function ArticleSettings({ onDataChange }) {
   const [featuredImage, setFeaturedImage] = useState(null);
   const imageInputRef = useRef(null);
 
-  // Send data to parent whenever settings change
-  useEffect(() => {
-    onDataChange?.({ 
-      category, 
-      tags, 
-      coverImage: featuredImage 
-    });
+  useEffect(() => {onDataChange?.({   category,   tags,  coverImage: featuredImage 
+ });
   }, [category, tags, featuredImage, onDataChange]);
 
   const categories = [
@@ -66,15 +63,15 @@ export default function ArticleSettings({ onDataChange }) {
   };
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-sm font-semibold text-gray-700">ARTICLE SETTINGS</h3>
+    <div className="settings-container">
+      <h3 className="settings-title">ARTICLE SETTINGS</h3>
 
-      <div>
-        <label className="text-sm text-gray-600 font-medium">Category</label>
+      <div className="settings-section">
+        <label className="settings-label">Category</label>
         <select 
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="w-full border border-gray-300 rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="settings-select"
         >
           {categories.map((cat) => (
             <option key={cat} value={cat}>{cat}</option>
@@ -82,39 +79,30 @@ export default function ArticleSettings({ onDataChange }) {
         </select>
       </div>
 
-      <div>
-        <label className="text-sm text-gray-600 font-medium">Featured Image</label>
+      <div className="settings-section">
+        <label className="settings-label">Featured Image</label>
         <div 
           onClick={!featuredImage ? handleImageClick : undefined}
-          className={`border-2 rounded-md h-32 flex items-center justify-center mt-2 overflow-hidden relative group ${
-            !featuredImage 
-              ? 'border-dashed border-gray-300 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors' 
-              : 'border-solid border-gray-200'
-          }`}
+          className={`image-upload-container ${!featuredImage ? 'dashed' : 'solid'}`}
         >
           {!featuredImage ? (
-            <div className="text-center">
-              <svg className="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <p className="text-sm text-gray-400">Click to upload image</p>
+            <div className="image-upload-placeholder">
+              <Icon src="/assets/icons/upload.png" alt="Upload" className="upload-icon" />
+              <p className="upload-text">Click to upload image</p>
             </div>
           ) : (
             <>
               <img 
                 src={featuredImage} 
                 alt="Featured" 
-                className="w-full h-full object-cover"
+                className="featured-image"
               />
               <button
                 onClick={handleRemoveImage}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
+                className="remove-image-btn"
                 type="button"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+                <Icon src="/assets/icons/close.png" alt="Remove" className="remove-icon" />
               </button>
             </>
           )}
@@ -128,33 +116,27 @@ export default function ArticleSettings({ onDataChange }) {
         />
       </div>
 
-      <div>
-        <label className="text-sm text-gray-600 font-medium">Tags</label>
+      <div className="settings-section">
+        <label className="settings-label">Tags</label>
         <input
           type="text"
           value={tagInput}
           onChange={(e) => setTagInput(e.target.value)}
           onKeyDown={handleAddTag}
           placeholder="Add a tag and press Enter..."
-          className="w-full border border-gray-300 rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="tag-input"
         />
 
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div className="tags-container">
           {tags.map((tag, index) => (
-            <span 
-              key={index} 
-              className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-1 group"
-            >
+            <span key={index} className="tag">
               {tag}
               <button
                 onClick={() => handleRemoveTag(tag)}
-                className="hover:text-red-600 ml-1"
+                className="tag-remove-btn"
                 type="button"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+                <Icon src="/assets/icons/close.png" alt="Remove" className="remove-icon" />
               </button>
             </span>
           ))}

@@ -4,8 +4,11 @@ import { useState, useRef } from 'react';
 import Editor from "../components/Editor";
 import ArticleSettings from "../components/ArticleSettings";
 import { supabase } from "@/lib/supabase";
+import './write.css';
 
 export default function WritePage() {
+  // Auth state - set to true for now (authenticated)
+  const [isAuthenticated] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState('');
@@ -23,6 +26,11 @@ export default function WritePage() {
   };
 
   const handleSaveDraft = async () => {
+    if (!isAuthenticated) {
+      setMessage('You must be authenticated to save drafts');
+      return;
+    }
+
     setSaving(true);
     setMessage('');
 
@@ -31,6 +39,14 @@ export default function WritePage() {
 
       if (!title.trim()) {
         setMessage('Please add a title');
+        setSaving(false);
+        return;
+      }
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        setMessage('You must be logged in to save drafts');
         setSaving(false);
         return;
       }
@@ -44,7 +60,7 @@ export default function WritePage() {
             category: category,
             cover_image: coverImage,
             is_published: false,
-            author_id: null,
+            author_id: user.id,
             image_paths: []
           }
         ])
@@ -63,6 +79,11 @@ export default function WritePage() {
   };
 
   const handlePublish = async () => {
+    if (!isAuthenticated) {
+      setMessage('You must be authenticated to publish');
+      return;
+    }
+
     setPublishing(true);
     setMessage('');
 
@@ -81,6 +102,14 @@ export default function WritePage() {
         return;
       }
 
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        setMessage('You must be logged in to publish');
+        setPublishing(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('blogs')
         .insert([
@@ -90,7 +119,7 @@ export default function WritePage() {
             category: category,
             cover_image: coverImage,
             is_published: true,
-            author_id: null,
+            author_id: user.id,
             image_paths: []
           }
         ])
@@ -109,42 +138,42 @@ export default function WritePage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white">
+    <div className="write-page">
 
-      <div className="flex justify-between items-center border-b px-8 py-4">
-        <span className="font-semibold text-lg">Readme</span>
+      <div className="write-header">
+        <span className="write-logo">Readme</span>
 
-        <div className="flex items-center gap-4">
+        <div className="write-actions">
           {message && (
-            <span className={`text-sm ${message.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
+            <span className={`write-message ${message.includes('Error') ? 'write-message-error' : 'write-message-success'}`}>
               {message}
             </span>
           )}
           <button 
             onClick={handleSaveDraft}
             disabled={saving}
-            className="text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="write-draft-btn"
           >
             {saving ? 'Saving...' : 'Save Draft'}
           </button>
           <button 
             onClick={handlePublish}
             disabled={publishing}
-            className="bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="write-publish-btn"
           >
             {publishing ? 'Publishing...' : 'Publish'}
           </button>
         </div>
       </div>
 
-      <div className="flex flex-1">
-        <div className="flex-1 py-8 flex justify-center overflow-y-auto">
-          <div className="w-full max-w-[720px] px-4">
+      <div className="write-content">
+        <div className="write-editor-section">
+          <div className="write-editor-wrapper">
             <Editor onDataChange={updateEditorData} />
           </div>
         </div>
 
-        <div className="w-[320px] border-l border-gray-200 px-6 py-8">
+        <div className="write-sidebar">
           <ArticleSettings onDataChange={updateEditorData} />
         </div>
 

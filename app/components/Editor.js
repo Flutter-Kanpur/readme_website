@@ -2,6 +2,8 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Toolbar from "./Toolbar";
+import Icon from './Icon';
+import './Editor.css';
 
 export default function Editor({ onDataChange }) {
   const editorRef = useRef(null);
@@ -190,22 +192,19 @@ export default function Editor({ onDataChange }) {
   };
 
   return (
-    <div className="relative">
+    <div className="editor-container">
 
       {showLinkDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-[400px]">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Insert Link</h3>
+        <div className="link-dialog-overlay">
+          <div className="link-dialog">
+            <div className="link-dialog-header">
+              <h3 className="link-dialog-title">Insert Link</h3>
               <button
                 onClick={cancelLink}
-                className="text-gray-400 hover:text-gray-600"
+                className="link-dialog-close"
                 type="button"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+                <Icon src="/assets/icons/close.png" alt="Close" className="link-dialog-close-icon" />
               </button>
             </div>
             <input
@@ -220,20 +219,20 @@ export default function Editor({ onDataChange }) {
                 }
               }}
               placeholder="Paste or type a link..."
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="link-input"
               autoFocus
             />
-            <div className="flex justify-end gap-3 mt-4">
+            <div className="link-dialog-actions">
               <button
                 onClick={cancelLink}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="link-cancel-btn"
                 type="button"
               >
                 Cancel
               </button>
               <button
                 onClick={insertLink}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="link-insert-btn"
                 disabled={!linkUrl.trim()}
                 type="button"
               >
@@ -244,7 +243,7 @@ export default function Editor({ onDataChange }) {
         </div>
       )}
 
-      <div className="mb-6">
+      <div className="editor-toolbar-section">
         <Toolbar 
           onBold={() => handleFormat('bold')}
           onItalic={() => handleFormat('italic')}
@@ -259,15 +258,7 @@ export default function Editor({ onDataChange }) {
         ref={titleRef}
         type="text"
         placeholder="Title of your story..."
-        className="
-          w-full
-          text-[42px]
-          font-serif
-          font-semibold
-          placeholder-gray-300
-          focus:outline-none
-          leading-tight
-        "
+        className="editor-title"
       />
 
       <div
@@ -279,30 +270,7 @@ export default function Editor({ onDataChange }) {
         onBlur={handlePlaceholder}
         onClick={handleEditorClick}
         data-empty="true"
-        className="
-          w-full
-          mt-4
-          text-lg
-          text-gray-700
-          focus:outline-none
-          min-h-[400px]
-          leading-8
-          relative
-          [&[data-empty='true']]:before:content-['Start_your_story...']
-          [&[data-empty='true']]:before:text-gray-400
-          [&[data-empty='true']]:before:absolute
-          [&_img]:max-w-full
-          [&_img]:h-auto
-          [&_blockquote]:border-l-4
-          [&_blockquote]:border-gray-300
-          [&_blockquote]:pl-4
-          [&_blockquote]:italic
-          [&_blockquote]:text-gray-600
-          [&_a]:text-blue-600
-          [&_a]:underline
-          [&_a]:cursor-pointer
-        "
-        style={{ whiteSpace: 'pre-wrap' }}
+        className="editor-content"
       />
       <input
         ref={fileInputRef}
