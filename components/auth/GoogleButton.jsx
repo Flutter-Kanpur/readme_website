@@ -1,9 +1,23 @@
-import Image from "next/image";
+"use client";
 
-export default function GoogleButton({ children = "Continue with Google" }) {
+import Image from "next/image";
+import { supabase } from "@/app/lib/supabase";
+
+export default function GoogleButton({ disabled = false }) {
+  const handleGoogleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin + "/dashboard",
+      },
+    });
+  };
+
   return (
     <button
       type="button"
+      onClick={handleGoogleLogin}
+      disabled={disabled}
       style={{
         width: "100%",
         display: "flex",
@@ -17,11 +31,12 @@ export default function GoogleButton({ children = "Continue with Google" }) {
         color: "#111827",
         fontSize: 14,
         fontWeight: 600,
-        cursor: "pointer",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.6 : 1,
       }}
     >
       <Image src="/google.png" alt="Google" width={20} height={20} />
-      {children}
+      Continue with Google
     </button>
   );
 }
