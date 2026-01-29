@@ -1,14 +1,15 @@
-import Navbar from '@/components/layout/Navbar'
-import ProfileHeader from '@/components/profile/ProfileHeader'
-import UserStats from '@/components/profile/UserStats'
-import ArticleCard from '@/components/blog/ArticleCard'
+import Navbar from '@/components/Navbar/Navbar'
+import ProfileHeader from '@/components/ProfileHeader/ProfileHeader'
+import UserStats from '@/components/UserStats/UserStats'
+import ArticleCard from '@/components/ArticleCard/ArticleCard'
 
 import {
   getProfileById,
   getPublishedBlogsByAuthor,
   getAuthorByBlogId
 } from '@/lib/queries'
-import Footer from '../../../components/layout/Footer'
+import Footer from '../../../components/Footer.jsx/Footer'
+import './styles.css'
 
 export default async function ProfilePage({ params }) {
   const { userId } = await params
@@ -48,20 +49,20 @@ export default async function ProfilePage({ params }) {
   )
 
   return (
-    <div style={styles.page}>
+    <div className="page">
       <Navbar />
 
-      <div style={styles.container}>
+      <div className="container">
         <ProfileHeader profile={profile} />
 
-        <div style={styles.blogsarea}>
+        <div className="blogsarea">
           {/* Articles */}
           <div>
-            <h2 style={styles.sectionTitle}>Published</h2>
+            <h2 className="sectionTitle">Published</h2>
 
-            <div style={styles.articles}>
+            <div className="articles">
               {blogs.length === 0 && (
-                <p style={styles.empty}>No published articles yet.</p>
+                <p className="empty">No published articles yet.</p>
               )}
 
               {blogsWithAuthors.map(blog => (
@@ -82,37 +83,7 @@ export default async function ProfilePage({ params }) {
   )
 }
 
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: '#fff'
-  },
-  container: {
-    maxWidth: '1100px',
-    margin: '0 auto',
-    padding: '40px 20px'
-  },
-  blogsarea: {
-    display: 'flex',
-    flexDirection: 'row',
-    gap: '40px',
-    marginTop: '40px'
-  },
-  articles: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px'
-  },
-  sectionTitle: {
-    fontSize: '18px',
-    marginBottom: '20px',
-    color: '#000'
-  },
-  empty: {
-    color: '#777',
-    fontStyle: 'italic'
-  }
-}
+
 
 
 

@@ -1,0 +1,72 @@
+.wrapper{
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.avatar{
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.name{
+  margin: 0;
+  color: #000;
+}
+
+.bio{
+  margin-top: 6px;
+  max-width: 500px;
+  color: #1f2937;
+}
+
+.stats{
+  margin-top: 12px;
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.statsdata{
+  color: #000;
+}
+
+
+
+/* const styles = {
+  wrapper: {
+    display: 'flex',
+    gap: '20px',
+    alignItems: 'center'
+  },
+  avatar: {
+    width: '96px',
+    height: '96px',
+    borderRadius: '50%',
+    objectFit: 'cover'
+  },
+  name: {
+    fontSize: '28px',
+    fontWeight: '700',
+    margin: 0,
+    color: '#000'
+  },
+  bio: {
+    marginTop: '6px',
+    maxWidth: '500px',
+    color: '#1f2937'
+  },
+  stats: {
+    marginTop: '12px',
+    display: 'flex',
+    gap: '20px',
+    fontSize: '14px',
+    color: '#1f2937'
+  },
+  statsdata: {
+    color: '#000'
+  }
+} */

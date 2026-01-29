@@ -1,64 +1,65 @@
+import './styles.css'
 import Image from 'next/image'
 
 export default function ProfileHeader({ profile }) {
   return (
-    <div style={styles.wrapper}>
+    <div className='wrapper'>
       <Image
           src={profile.avatar_url}
           alt="avatar"
           width={96}
           height={96}
-          style={styles.avatar}
+          className='avatar'
         />
 
       <div>
-        <h1 style={styles.name}>{profile.name}</h1>
-        <p style={styles.bio}>{profile.bio}</p>
+        <h2 className='name'>{profile.name}</h2>
+        <p className='bio'>{profile.bio}</p>
 
-        <div style={styles.stats}>
-          <span><b><span style={styles.statsdata}>{profile.followers_count || 0}</span></b> Followers</span>
-          <span><b><span style={styles.statsdata}>{profile.following_count || 0}</span></b> Following</span>
-          <span><b><span style={styles.statsdata}>{profile.reads_count || 0}</span></b> Reads</span>
+        <div className='stats'>
+          <span><b><span className='statsdata'>{profile.followers_count || 0}</span></b> Followers</span>
+          <span><b><span className='statsdata'>{profile.following_count || 0}</span></b> Following</span>
+          <span><b><span className='statsdata'>{profile.reads_count || 0}</span></b> Reads</span>
         </div>
       </div>
     </div>
   )
 }
 
-const styles = {
-  wrapper: {
-    display: 'flex',
-    gap: '20px',
-    alignItems: 'center'
-  },
-  avatar: {
-    width: '96px',
-    height: '96px',
-    borderRadius: '50%',
-    objectFit: 'cover'
-  },
-  name: {
-    fontSize: '28px',
-    fontWeight: '700',
-    margin: 0,
-    color: '#000'
-  },
-  bio: {
-    marginTop: '6px',
-    maxWidth: '500px',
-    color: '#1f2937'
-  },
-  stats: {
-    marginTop: '12px',
-    display: 'flex',
-    gap: '20px',
-    fontSize: '14px',
-    color: '#1f2937'
-  },
-  statsdata: {
-    color: '#000'
-  }
-}
+// const styles = {
+//   wrapper: {
+//     display: 'flex',
+//     gap: '20px',
+//     alignItems: 'center'
+//   },
+//   avatar: {
+//     width: '96px',
+//     height: '96px',
+//     borderRadius: '50%',
+//     objectFit: 'cover'
+//   },
+//   name: {
+//     fontSize: '28px',
+//     fontWeight: '700',
+//     margin: 0,
+//     color: '#000'
+//   },
+//   bio: {
+//     marginTop: '6px',
+//     maxWidth: '500px',
+//     color: '#1f2937'
+//   },
+//   stats: {
+//     marginTop: '12px',
+//     display: 'flex',
+//     gap: '20px',
+//     fontSize: '14px',
+//     color: '#1f2937'
+//   },
+//   statsdata: {
+//     color: '#000'
+//   }
+// }
 
 
 
