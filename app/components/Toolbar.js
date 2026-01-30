@@ -2,10 +2,10 @@
 import Icon from './Icon';
 import './Toolbar.css';
 
-function ToolbarButton({ onClick, className, title, type = 'button', children }) {
+function ToolbarButton({ onClick, className, title, type = 'button', icon, children }) {
   const handleMouseDown = (e) => {
     e.preventDefault();
-    onClick();
+    onClick && onClick();
   };
   return (
     <button
@@ -14,30 +14,32 @@ function ToolbarButton({ onClick, className, title, type = 'button', children })
       title={title}
       type={type}
     >
+      {icon && <Icon src={icon.src} alt={icon.alt} />}
       {children}
     </button>
   );
 }
 
-export default function Toolbar({ onBold, onItalic, onUnderline, onQuote, onLink, onImage }) {
+export default function Toolbar({ buttons = [] }) {
   return (
     <div className="toolbar">
-      <div className="toolbar-group">
-        <ToolbarButton onClick={onBold} className="toolbar-btn toolbar-btn-bold" title="Bold (Ctrl+B)">B</ToolbarButton>
-        <ToolbarButton onClick={onItalic} className="toolbar-btn toolbar-btn-italic" title="Italic (Ctrl+I)">I</ToolbarButton>
-        <ToolbarButton onClick={onUnderline} className="toolbar-btn toolbar-btn-underline" title="Underline (Ctrl+U)">U</ToolbarButton>
-      </div>
-      <div className="toolbar-group">
-        <ToolbarButton onClick={onQuote} className="toolbar-btn toolbar-btn-icon" title="Quote">
-          <Icon src="/assets/icons/quote.png" alt="Quote" />
-        </ToolbarButton>
-        <ToolbarButton onClick={onLink} className="toolbar-btn toolbar-btn-icon" title="Link">
-          <Icon src="/assets/icons/link.png" alt="Link" />
-        </ToolbarButton>
-        <ToolbarButton onClick={onImage} className="toolbar-btn toolbar-btn-icon" title="Image">
-          <Icon src="/assets/icons/image.png" alt="Image" />
-        </ToolbarButton>
-      </div>
+      {buttons.map((group, i) => (
+        <div className="toolbar-group" key={i}>
+          {group.map((btn, j) => (
+            <ToolbarButton
+              key={j}
+              onClick={btn.onClick}
+              className={btn.className}
+              title={btn.title}
+              icon={btn.icon}
+              type={btn.type}
+            >
+              {btn.label}
+            </ToolbarButton>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
+

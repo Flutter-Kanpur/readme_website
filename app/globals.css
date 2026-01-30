@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* Base reset */
 * {
   box-sizing: border-box;
 }
