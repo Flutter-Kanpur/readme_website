@@ -1,0 +1,93 @@
+.write-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+}
+
+.write-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgb(229, 231, 235);
+  padding: 1rem 2rem;
+}
+
+.write-logo {
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.write-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.write-message {
+  font-size: 0.875rem;
+}
+
+.write-message-error {
+  color: rgb(220, 38, 38);
+}
+
+.write-message-success {
+  color: rgb(22, 163, 74);
+}
+
+.write-draft-btn {
+  font-size: 0.875rem;
+  color: rgb(75, 85, 99);
+}
+
+.write-draft-btn:hover {
+  color: rgb(31, 41, 55);
+}
+
+.write-draft-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.write-publish-btn {
+  background-color: rgb(37, 99, 235);
+  color: white;
+  padding: 0.375rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.write-publish-btn:hover {
+  background-color: rgb(29, 78, 216);
+}
+
+.write-publish-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.write-content {
+  display: flex;
+  flex: 1;
+}
+
+.write-editor-section {
+  flex: 1;
+  padding: 2rem 0;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.write-editor-wrapper {
+  width: 100%;
+  max-width: 720px;
+  padding: 0 1rem;
+}
+
+.write-sidebar {
+  width: 320px;
+  border-left: 1px solid rgb(229, 231, 235);
+  padding: 2rem 1.5rem;
+}

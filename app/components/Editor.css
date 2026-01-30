@@ -1,0 +1,156 @@
+.editor-container {
+  position: relative;
+}
+
+.link-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.link-dialog {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+  width: 400px;
+}
+
+.link-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.link-dialog-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgb(31, 41, 55);
+}
+
+.link-dialog-close {
+  color: rgb(156, 163, 175);
+}
+
+.link-dialog-close:hover {
+  color: rgb(75, 85, 99);
+}
+
+.link-dialog-close-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.link-input {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 1px solid rgb(209, 213, 219);
+  border-radius: 0.5rem;
+}
+
+.link-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(59, 130, 246);
+  border-color: transparent;
+}
+
+.link-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.link-cancel-btn {
+  padding: 0.5rem 1rem;
+  color: rgb(75, 85, 99);
+  border-radius: 0.5rem;
+}
+
+.link-cancel-btn:hover {
+  background-color: rgb(243, 244, 246);
+}
+
+.link-insert-btn {
+  padding: 0.5rem 1rem;
+  background-color: rgb(37, 99, 235);
+  color: white;
+  border-radius: 0.5rem;
+}
+
+.link-insert-btn:hover {
+  background-color: rgb(29, 78, 216);
+}
+
+.link-insert-btn:disabled {
+  background-color: rgb(209, 213, 219);
+  cursor: not-allowed;
+}
+
+.editor-toolbar-section {
+  margin-bottom: 1.5rem;
+}
+
+.editor-title {
+  width: 100%;
+  font-size: 42px;
+  font-family: serif;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.editor-title::placeholder {
+  color: rgb(209, 213, 219);
+}
+
+.editor-title:focus {
+  outline: none;
+}
+
+.editor-content {
+  width: 100%;
+  margin-top: 1rem;
+  font-size: 1.125rem;
+  color: rgb(55, 65, 81);
+  min-height: 400px;
+  line-height: 2;
+  position: relative;
+  white-space: pre-wrap;
+}
+
+.editor-content:focus {
+  outline: none;
+}
+
+.editor-content[data-empty="true"]::before {
+  content: 'Start your story...';
+  color: rgb(156, 163, 175);
+  position: absolute;
+}
+
+.editor-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+.editor-content blockquote {
+  border-left: 4px solid rgb(209, 213, 219);
+  padding-left: 1rem;
+  font-style: italic;
+  color: rgb(75, 85, 99);
+}
+
+.editor-content a {
+  color: rgb(37, 99, 235);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
