@@ -1,10 +1,12 @@
 "use client";
-export default function CustomButton({ handleClick, children, className = "" }) {
+import "./styles.css";
 
+export default function CustomButton({ handleClick, children, styles }) {
   return (
     <button
       onClick={handleClick}
-      className={`bg-black text-white px-4 py-2 rounded-full text-sm cursor-pointer hover:opacity-90 transition ${className}`}
+      className={!styles ? "custom-button" : ""}
+      style={styles}
     >
       {children}
     </button>

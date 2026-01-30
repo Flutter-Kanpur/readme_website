@@ -6,7 +6,8 @@ import Image from 'next/image'
 
 import {
     getBlogDetailByBlogId,
-    getAuthorByBlogId
+    getAuthorByBlogId,
+    getRelatedArticlesByAuthorId
 } from '@/app/lib/supabase/queries'
 
 import AuthorCard from '@/components/AuthorCard/AuthorCard'
@@ -44,9 +45,10 @@ export default function ArticlePage() {
                 const authorData = await getAuthorByBlogId(params.blogId)
                 setAuthor(authorData)
 
-                if (authorData?.id) {
+                if (blogData.author_id) {
           const related = await getRelatedArticlesByAuthorId(
-            authorData.id,
+            // authorData.id,
+            blogData.author_id,
             blogData.blog_id
           )
           setRelatedArticles(related || [])
@@ -119,7 +121,7 @@ export default function ArticlePage() {
                         />
                     )}
 
-                    <RelatedArticles articles={relatedArticles.map(a => a.title)}/>
+                    <RelatedArticles articles={relatedArticles}/>
 
                     <WeeklyRead
                         text="Get the best design and development articles delivered to your inbox."
