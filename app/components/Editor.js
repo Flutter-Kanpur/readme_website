@@ -242,7 +242,7 @@ export default function Editor({ onDataChange }) {
           </div>
         </div>
       )}
-
+//g
 
       <div className="editor-toolbar-section">
         <Toolbar
