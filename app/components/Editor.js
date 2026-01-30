@@ -243,14 +243,21 @@ export default function Editor({ onDataChange }) {
         </div>
       )}
 
+
       <div className="editor-toolbar-section">
-        <Toolbar 
-          onBold={() => handleFormat('bold')}
-          onItalic={() => handleFormat('italic')}
-          onUnderline={() => handleFormat('underline')}
-          onQuote={handleQuote}
-          onLink={handleLink}
-          onImage={handleImage}
+        <Toolbar
+          buttons={[
+            [
+              { label: 'B', onClick: () => handleFormat('bold'), className: 'toolbar-btn toolbar-btn-bold', title: 'Bold (Ctrl+B)' },
+              { label: 'I', onClick: () => handleFormat('italic'), className: 'toolbar-btn toolbar-btn-italic', title: 'Italic (Ctrl+I)' },
+              { label: 'U', onClick: () => handleFormat('underline'), className: 'toolbar-btn toolbar-btn-underline', title: 'Underline (Ctrl+U)' },
+            ],
+            [
+              { icon: { src: '/assets/icons/quote.png', alt: 'Quote' }, onClick: handleQuote, className: 'toolbar-btn toolbar-btn-icon', title: 'Quote' },
+              { icon: { src: '/assets/icons/link.png', alt: 'Link' }, onClick: handleLink, className: 'toolbar-btn toolbar-btn-icon', title: 'Link' },
+              { icon: { src: '/assets/icons/image.png', alt: 'Image' }, onClick: handleImage, className: 'toolbar-btn toolbar-btn-icon', title: 'Image' },
+            ]
+          ]}
         />
       </div>
 
