@@ -31,7 +31,15 @@ export default function AuthorCard({ author, onFollow }) {
         </p>
       )}
 
-      <CustomButton handleClick={onFollow} className= "w-full bg-black text-white px-4 py-2 rounded-full text-sm cursor-pointer hover:opacity-90 transition">
+      <CustomButton handleClick={onFollow} styles={{
+        width: "100%",
+        backgroundColor: "#000000",
+        color: "#ffffff",
+        padding: "8px 16px",
+        borderRadius: "9999px",
+        fontSize: "14px",
+        cursor: "pointer",
+      }}>
         Follow Author
       </CustomButton>
 

@@ -15,19 +15,19 @@ import Footer from '@/components/Footer/Footer'
 import './styles.css'
 
 export default function ProfilePage() {
-  const { userid } = useParams()
+  const { userId } = useParams()
   const [profile, setProfile] = useState(null)
   const [blogs, setBlogs] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadProfile() {
-      if (!userid) return
+      if (!userId) return
 
       try {
         setLoading(true)
 
-        const profileData = await getProfileById(userid)
+        const profileData = await getProfileById(userId)
         if (!profileData) return
 
         setProfile(profileData)
@@ -53,8 +53,8 @@ export default function ProfilePage() {
     }
 
     loadProfile()
-  }, [userid])
-  if (!userid) {
+  }, [userId])
+  if (!userId) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
         <h2>Invalid profile URL</h2>

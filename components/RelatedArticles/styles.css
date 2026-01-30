@@ -2,11 +2,11 @@
   background: #fff;
   padding: 1.5rem;
   border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
 .related-title {
-  font-size: 2rem;
+  font-size: 1rem;
   margin-bottom: 1rem;
   font-weight: 600;
   color: #000;
@@ -19,8 +19,7 @@
 }
 
 .related-item {
-  font-size: 0.85rem;
+  font-size: 1rem;
   padding: 0.5rem 0;
-  cursor: pointer;
   color: #333;
 }
