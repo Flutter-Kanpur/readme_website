@@ -1,0 +1,26 @@
+.related-articles {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.related-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #000;
+}
+
+.related-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.related-item {
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  color: #333;
+}
