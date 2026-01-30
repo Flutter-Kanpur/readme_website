@@ -2,24 +2,29 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import AuthLayout from "../components/auth/AuthLayout";
-import LeftPanel from "../components/auth/LeftPanel";
-import Field from "../components/auth/Field";
-import Divider from "../components/auth/Divider";
-import PrimaryButton from "../components/auth/PrimaryButton";
-import GoogleButton from "../components/auth/GoogleButton";
-import styles from "../styles/auth.module.css";
-import { supabase } from "./lib/supabase";
+import AuthLayout from "@/components/auth/AuthLayout";
+import LeftPanel from "@/components/auth/LeftPanel";
+import Field from "@/components/auth/Field";
+import Divider from "@/components/auth/Divider";
+import PrimaryButton from "@/components/auth/PrimaryButton";
+import GoogleButton from "@/components/auth/GoogleButton";
+import styles from "@/styles/auth.module.css";
+import { supabase } from "../lib/supabase";
 
-export default function Home() {
-  const [form, setForm] = useState({ email: "", password: "" });
+export default function Register() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
   const handleChange = (key, value) =>
     setForm((p) => ({ ...p, [key]: value }));
 
-  const handleSignIn = async (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
     if (loading) return;
 
@@ -27,9 +32,14 @@ export default function Home() {
     setMessage(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email: form.email.trim(),
         password: form.password,
+        options: {
+          data: {
+            full_name: form.name,
+          },
+        },
       });
 
       if (error) {
@@ -37,10 +47,16 @@ export default function Home() {
         return;
       }
 
-      setMessage({ type: "success", text: "Signed in successfully!" });
+      setMessage({
+        type: "success",
+        text: "Account created successfully!",
+      });
       // router.push("/dashboard")
     } catch {
-      setMessage({ type: "error", text: "Something went wrong. Try again." });
+      setMessage({
+        type: "error",
+        text: "Something went wrong. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -53,11 +69,21 @@ export default function Home() {
       <section className={styles.right}>
         <div className={styles.rightInner}>
           <header className={styles.headingWrap}>
-            <h2 className={styles.h2}>Welcome back</h2>
-            <p className={styles.p}>Please enter your details to sign in.</p>
+            <h2 className={styles.h2}>Join the community</h2>
+            <p className={styles.p}>
+              Start your design journey with Readme today.
+            </p>
           </header>
 
-          <form className={styles.form} onSubmit={handleSignIn}>
+          <form className={styles.form} onSubmit={handleSignUp}>
+            <Field
+              label="FULL NAME"
+              type="text"
+              placeholder="Jane Doe"
+              value={form.name}
+              onChange={(e) => handleChange("name", e.target.value)}
+            />
+
             <Field
               label="EMAIL ADDRESS"
               type="email"
@@ -72,15 +98,10 @@ export default function Home() {
               placeholder="••••••••"
               value={form.password}
               onChange={(e) => handleChange("password", e.target.value)}
-              rightEl={
-                <Link href="#" className={styles.linkSmall}>
-                  FORGOT PASSWORD?
-                </Link>
-              }
             />
 
             <PrimaryButton type="submit" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In →"}
+              {loading ? "Creating account..." : "Create account →"}
             </PrimaryButton>
           </form>
 
@@ -100,9 +121,9 @@ export default function Home() {
           <GoogleButton disabled={loading} />
 
           <p className={styles.footerText}>
-            Don’t have an account?{" "}
-            <Link href="/register" className={styles.footerLink}>
-              Create an account
+            Already have an account?{" "}
+            <Link href="/" className={styles.footerLink}>
+              Sign in
             </Link>
           </p>
         </div>

@@ -1,0 +1,21 @@
+.pro-tip {
+  background: #000;
+  color: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  margin-top: 2rem;
+}
+
+.pro-tip-label {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: #3bb2f6;
+  margin-bottom: 0.5rem;
+}
+
+.pro-tip-text {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #fff;
+}

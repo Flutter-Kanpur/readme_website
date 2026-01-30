@@ -1,0 +1,31 @@
+.author-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  /* text-align: center; */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.author-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1rem;
+}
+
+.author-name {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #000;
+}
+
+.author-bio {
+  font-size: 0.85rem;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
