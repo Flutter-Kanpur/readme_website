@@ -83,7 +83,6 @@ export async function getBlogDetailByBlogId(blogId) {
       created_at,
       cover_image,
       category,
-      image_paths,
       is_published,
       author_id
     `)
@@ -121,4 +120,30 @@ export async function getRelatedArticlesByAuthorId(authorId, currentBlogId) {
   }
 
   return data
+}
+
+
+export async function getLatestArticle() {
+  const { data, error } = await supabase
+    .from("blogs")
+    .select(`
+      blog_id,
+      title,
+      content,
+      created_at,
+      cover_image,
+      category,
+      is_published,
+      profiles (
+        name,
+        avatar_url
+      )
+    `)
+    .eq("is_published", true)
+    .order("created_at", { ascending: true })
+    .limit(3);
+
+  if (error) throw error;
+
+  return data;
 }
