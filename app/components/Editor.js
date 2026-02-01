@@ -32,9 +32,70 @@ export default function Editor({ onDataChange }) {
     };
   }, [onDataChange]);
 
-  const handleFormat = (command, value = null) => {
-    document.execCommand(command, false, value);
+  const handleFormat = (command) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.focus();
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    if (range.collapsed) {
+      alert('Select some text first');
+      return;
+    }
+
+    const fragment = range.extractContents();
+
+    let wrapper;
+    if (command === 'bold') {
+      wrapper = document.createElement('strong');
+    } else if (command === 'italic') {
+      wrapper = document.createElement('em');
+    } else if (command === 'underline') {
+      wrapper = document.createElement('u');
+    } else {
+      return;
+    }
+
+    wrapper.appendChild(fragment);
+
+    const resetSpan = document.createElement('span');
+    resetSpan.style.fontWeight = 'normal';
+    resetSpan.style.fontStyle = 'normal';
+    resetSpan.style.textDecoration = 'none';
+
+    const zwsp = document.createTextNode('\u200B');
+    resetSpan.appendChild(zwsp);
+
+    range.insertNode(wrapper);
+
+    if (wrapper.nextSibling) {
+      wrapper.parentNode.insertBefore(resetSpan, wrapper.nextSibling);
+    } else {
+      wrapper.parentNode.appendChild(resetSpan);
+    }
+
+    const newRange = document.createRange();
+    newRange.setStart(zwsp, 0);
+    newRange.collapse(true);
+
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+
+    resetSpan.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  };
+
+  const handleOrderedList = () => {
     editorRef.current?.focus();
+    document.execCommand('insertOrderedList', false, null);
+  };
+
+  const handleUnorderedList = () => {
+    editorRef.current?.focus();
+    document.execCommand('insertUnorderedList', false, null);
   };
 
   const handleQuote = () => {
@@ -54,7 +115,7 @@ export default function Editor({ onDataChange }) {
       blockquote.appendChild(selectedContent);
       
       range.insertNode(blockquote);
-            range.setStartAfter(blockquote);
+      range.setStartAfter(blockquote);
       range.collapse(true);
       selection.removeAllRanges();
       selection.addRange(range);
@@ -154,12 +215,55 @@ export default function Editor({ onDataChange }) {
         wrapper.style.border = '1px dashed #ccc';
         wrapper.style.padding = '2px';
         wrapper.style.margin = '10px 0';
+        wrapper.className = 'editor-image-wrapper';
         
         img.style.width = '100%';
         img.style.height = 'auto';
         img.style.border = 'none';
         
+        const deleteButton = document.createElement('button');
+        deleteButton.innerHTML = '×';
+        deleteButton.className = 'editor-image-delete';
+        deleteButton.type = 'button';
+        deleteButton.title = 'Delete image';
+        deleteButton.style.position = 'absolute';
+        deleteButton.style.top = '5px';
+        deleteButton.style.right = '5px';
+        deleteButton.style.width = '24px';
+        deleteButton.style.height = '24px';
+        deleteButton.style.borderRadius = '50%';
+        deleteButton.style.border = 'none';
+        deleteButton.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
+        deleteButton.style.color = 'white';
+        deleteButton.style.fontSize = '16px';
+        deleteButton.style.fontWeight = 'bold';
+        deleteButton.style.cursor = 'pointer';
+        deleteButton.style.display = 'flex';
+        deleteButton.style.alignItems = 'center';
+        deleteButton.style.justifyContent = 'center';
+        deleteButton.style.opacity = '0';
+        deleteButton.style.transition = 'opacity 0.2s ease';
+        deleteButton.style.zIndex = '10';
+        
+        deleteButton.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (confirm('Are you sure you want to delete this image?')) {
+            wrapper.remove();
+            editorRef.current?.focus();
+          }
+        });
+        
+        wrapper.addEventListener('mouseenter', () => {
+          deleteButton.style.opacity = '1';
+        });
+        
+        wrapper.addEventListener('mouseleave', () => {
+          deleteButton.style.opacity = '0';
+        });
+        
         wrapper.appendChild(img);
+        wrapper.appendChild(deleteButton);
         
         const selection = window.getSelection();
         if (selection.rangeCount > 0) {
@@ -188,6 +292,27 @@ export default function Editor({ onDataChange }) {
     if (target && target.href) {
       e.preventDefault();
       window.open(target.href, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key) {
+        case 'b':
+          e.preventDefault();
+          handleFormat('bold');
+          break;
+        case 'i':
+          e.preventDefault();
+          handleFormat('italic');
+          break;
+        case 'u':
+          e.preventDefault();
+          handleFormat('underline');
+          break;
+        default:
+          break;
+      }
     }
   };
 
@@ -242,7 +367,6 @@ export default function Editor({ onDataChange }) {
           </div>
         </div>
       )}
-//g
 
       <div className="editor-toolbar-section">
         <Toolbar
@@ -251,8 +375,8 @@ export default function Editor({ onDataChange }) {
               { label: 'B', onClick: () => handleFormat('bold'), className: 'toolbar-btn toolbar-btn-bold', title: 'Bold (Ctrl+B)' },
               { label: 'I', onClick: () => handleFormat('italic'), className: 'toolbar-btn toolbar-btn-italic', title: 'Italic (Ctrl+I)' },
               { label: 'U', onClick: () => handleFormat('underline'), className: 'toolbar-btn toolbar-btn-underline', title: 'Underline (Ctrl+U)' },
-            ],
-            [
+              { icon: { src: '/assets/icons/bullet-list.png', alt: 'Bullet List' }, onClick: handleUnorderedList, className: 'toolbar-btn toolbar-btn-icon toolbar-btn-bullet-list', title: 'Bullet List' },
+              { icon: { src: '/assets/icons/numbered-list.png', alt: 'Numbered List' }, onClick: handleOrderedList, className: 'toolbar-btn toolbar-btn-icon toolbar-btn-numbered-list', title: 'Numbered List' },
               { icon: { src: '/assets/icons/quote.png', alt: 'Quote' }, onClick: handleQuote, className: 'toolbar-btn toolbar-btn-icon', title: 'Quote' },
               { icon: { src: '/assets/icons/link.png', alt: 'Link' }, onClick: handleLink, className: 'toolbar-btn toolbar-btn-icon', title: 'Link' },
               { icon: { src: '/assets/icons/image.png', alt: 'Image' }, onClick: handleImage, className: 'toolbar-btn toolbar-btn-icon', title: 'Image' },
@@ -276,6 +400,7 @@ export default function Editor({ onDataChange }) {
         onFocus={handlePlaceholder}
         onBlur={handlePlaceholder}
         onClick={handleEditorClick}
+        onKeyDown={handleKeyDown}
         data-empty="true"
         className="editor-content"
       />
