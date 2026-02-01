@@ -11,13 +11,32 @@ import GoogleButton from "../components/auth/GoogleButton";
 import styles from "../styles/auth.module.css";
 import { supabase } from "./lib/supabase";
 
+function mapSignInError(error) {
+  const msg = (error?.message || "").toLowerCase();
+  const status = error?.status;
+
+  if (status === 429 || msg.includes("too many requests")) {
+    return "Too many attempts. Please wait a minute and try again.";
+  }
+
+  // Supabase commonly uses this for both wrong password & user-not-found.
+  if (msg.includes("invalid login credentials")) {
+    return "Invalid email or password. If you’re new, please sign up first.";
+  }
+
+  if (msg.includes("email not confirmed")) {
+    return "Your email is not confirmed. Please check your inbox.";
+  }
+
+  return error?.message || "Sign in failed. Please try again.";
+}
+
 export default function Home() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
-  const handleChange = (key, value) =>
-    setForm((p) => ({ ...p, [key]: value }));
+  const handleChange = (key, value) => setForm((p) => ({ ...p, [key]: value }));
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -26,14 +45,23 @@ export default function Home() {
     setLoading(true);
     setMessage(null);
 
+    const email = form.email.trim();
+    const password = form.password;
+
+    if (!email || !password) {
+      setMessage({ type: "error", text: "Please enter email and password." });
+      setLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: form.email.trim(),
-        password: form.password,
+        email,
+        password,
       });
 
       if (error) {
-        setMessage({ type: "error", text: error.message });
+        setMessage({ type: "error", text: mapSignInError(error) });
         return;
       }
 

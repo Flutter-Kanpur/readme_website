@@ -9,20 +9,32 @@ import Divider from "@/components/auth/Divider";
 import PrimaryButton from "@/components/auth/PrimaryButton";
 import GoogleButton from "@/components/auth/GoogleButton";
 import styles from "@/styles/auth.module.css";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/app/lib/supabase";
+
+function mapSignUpError(error) {
+  const msg = (error?.message || "").toLowerCase();
+  const status = error?.status;
+
+  if (status === 429 || msg.includes("too many requests"))
+    return "Too many attempts. Please wait a minute and try again.";
+
+  if (msg.includes("user already registered") || msg.includes("already registered"))
+    return "User already exists! Please sign in instead.";
+
+  if (msg.includes("invalid email")) return "Please enter a valid email address.";
+
+  if (msg.includes("password") && (msg.includes("at least") || msg.includes("should be")))
+    return error.message;
+
+  return error?.message || "Sign up failed. Please try again.";
+}
 
 export default function Register() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
-
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
-  const handleChange = (key, value) =>
-    setForm((p) => ({ ...p, [key]: value }));
+  const handleChange = (key, value) => setForm((p) => ({ ...p, [key]: value }));
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -31,32 +43,41 @@ export default function Register() {
     setLoading(true);
     setMessage(null);
 
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const password = form.password;
+
+    if (!name) {
+      setMessage({ type: "error", text: "Please enter your full name." });
+      setLoading(false);
+      return;
+    }
+    if (!email || !password) {
+      setMessage({ type: "error", text: "Please fill all the fields." });
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { error } = await supabase.auth.signUp({
-        email: form.email.trim(),
-        password: form.password,
-        options: {
-          data: {
-            full_name: form.name,
-          },
-        },
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name } },
       });
 
       if (error) {
-        setMessage({ type: "error", text: error.message });
+        setMessage({ type: "error", text: mapSignUpError(error) });
         return;
       }
 
-      setMessage({
-        type: "success",
-        text: "Account created successfully!",
-      });
-      // router.push("/dashboard")
+      // Since you disabled email verification
+      if (data?.user) {
+        setMessage({ type: "success", text: "Account created successfully! You can sign in now." });
+      } else {
+        setMessage({ type: "success", text: "Account created! Please sign in to continue." });
+      }
     } catch {
-      setMessage({
-        type: "error",
-        text: "Something went wrong. Please try again.",
-      });
+      setMessage({ type: "error", text: "Something went wrong. Please try again." });
     } finally {
       setLoading(false);
     }
@@ -70,9 +91,7 @@ export default function Register() {
         <div className={styles.rightInner}>
           <header className={styles.headingWrap}>
             <h2 className={styles.h2}>Join the community</h2>
-            <p className={styles.p}>
-              Start your design journey with Readme today.
-            </p>
+            <p className={styles.p}>Start your design journey with Readme today.</p>
           </header>
 
           <form className={styles.form} onSubmit={handleSignUp}>
@@ -131,3 +150,4 @@ export default function Register() {
     </AuthLayout>
   );
 }
+  
