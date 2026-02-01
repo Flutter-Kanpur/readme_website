@@ -12,8 +12,8 @@ const HERO_CONTENT = {
     "Readme is a reader-first community focused on learning, building, and growing together through articles, collaboration, and real-world design practice.",
   actions: [
     {
-      label: "Start Typing →",
-      href: "/editor",
+      label: "Start Writing →",
+      href: "/write",
       primary: true,
     },
     {

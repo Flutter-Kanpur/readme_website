@@ -17,6 +17,7 @@ export default function Home() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleChange = (key, value) =>
     setForm((p) => ({ ...p, [key]: value }));
@@ -40,6 +41,7 @@ export default function Home() {
       }
 
       setMessage({ type: "success", text: "Signed in successfully!" });
+      setIsLoggedIn(true);
       router.push("/")
     } catch (error){
       setMessage({ type: "error", text: error.response?.data?.message || error.message || "An unexpected error occurred." });
