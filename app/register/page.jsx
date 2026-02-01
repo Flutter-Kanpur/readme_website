@@ -20,6 +20,8 @@ export default function Register() {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  
+
 
   const handleChange = (key, value) =>
     setForm((p) => ({ ...p, [key]: value }));
@@ -51,7 +53,9 @@ export default function Register() {
         type: "success",
         text: "Account created successfully!",
       });
-      // router.push("/dashboard")
+      setIsLoggedIn(true);
+      router.push("/")
+      
     } catch {
       setMessage({
         type: "error",
