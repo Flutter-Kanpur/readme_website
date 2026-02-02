@@ -2,7 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 import './styles.css'
 
-export default function ArticleCardAuthorInfo({author, createdAt}) {
+export default function ArticleCardAuthorInfo({author, createdAt, handleAuthorProfile}) {
     return (
         <div className='wrapper'>
             <Image
@@ -11,10 +11,11 @@ export default function ArticleCardAuthorInfo({author, createdAt}) {
                 width={16}
                 height={16}
                 className='avatar'
+                onClick={handleAuthorProfile}
             />
 
             <div>
-                <p className = 'name'>{author.name}</p>
+                <p className = 'name' onClick={handleAuthorProfile}>{author.name}</p>
                 {createdAt && (
                         <div className="article-meta">
                             <span>

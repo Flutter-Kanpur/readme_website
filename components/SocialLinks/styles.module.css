@@ -1,0 +1,31 @@
+.socialLinks {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.social{
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 20px;
+}
+
+.label {
+  font-size: 12px;
+  margin-bottom: 8px;
+  color: #666;
+  display: block;
+}
+
+.row {
+  margin-bottom: 12px;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  font-size: 14px;
+}

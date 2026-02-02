@@ -1,0 +1,15 @@
+.profile-header {
+  margin-bottom: 20px;
+}
+
+.back-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.profile-header h1 {
+  margin-top: 12px;
+  font-size: 28px;
+  font-weight: 600;
+}

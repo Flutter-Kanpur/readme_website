@@ -83,7 +83,6 @@ export async function getBlogDetailByBlogId(blogId) {
       created_at,
       cover_image,
       category,
-      image_paths,
       is_published,
       author_id
     `)
