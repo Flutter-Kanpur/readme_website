@@ -10,11 +10,8 @@ const NAV_LINKS = [
   { label: "Home", href: "/", active: true },
   { label: "Articles", href: "/articles" },
   { label: "Search", href: "/search" },
-  { label: "Trending", href: "/trending" },
-  { label: "Profile", href: "/profile" },
-];
-
-
+  { label: "Trending", href: "/trending" }
+]
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
@@ -41,10 +38,10 @@ export default function Navbar() {
     <nav className="w-full border-b border-gray-200 bg-white">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 
-        
+
         <div className="text-xl font-bold text-black">Readme</div>
 
-        
+
         <div className="hidden md:flex gap-8">
           {NAV_LINKS.map((link) => (
             <Link
@@ -55,9 +52,17 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
+          {user && (
+            <Link
+              href={`/profile/${user.id}`}
+              className="text-gray-600 hover:text-black"
+            >
+              Profile
+            </Link>
+          )}
         </div>
 
-        
+
         {user ? (
           <UserAvatar user={user} />
         ) : (
@@ -84,7 +89,7 @@ function UserAvatar({ user }) {
         className="rounded-full"
       />
 
-      
+
       <button
         onClick={() => supabase.auth.signOut()}
         className="bg-black text-white px-4 py-2 rounded-full text-sm"

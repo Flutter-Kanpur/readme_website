@@ -16,7 +16,7 @@ import WeeklyRead from '@/components/WeeklyRead/WeeklyRead'
 import ProTip from '@/components/ProTip/ProTip'
 
 import './styles.css'
-import Navbar from '@/components/Navbar/Navbar'
+import Navbar from '@/app/components/Navbar/Navbar'
 import Footer from '@/components/Footer/Footer'
 import ArticleCardAuthorInfo from '../../../components/ArticleCardAuthorInfo/ArticleCardAuthorInfo'
 

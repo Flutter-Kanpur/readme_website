@@ -1,6 +1,6 @@
 'use client'
-import { useParams } from 'next/navigation'
-import Navbar from '@/components/Navbar/Navbar'
+import { useParams, useRouter } from 'next/navigation'
+import Navbar from '@/app/components/Navbar/Navbar'
 import ProfileHeader from '@/components/ProfileHeader/ProfileHeader'
 import UserStats from '@/components/UserStats/UserStats'
 import ArticleCard from '@/components/ArticleCard/ArticleCard'
@@ -10,7 +10,8 @@ import {
   getPublishedBlogsByAuthor,
   getAuthorByBlogId
 } from '@/app/lib/supabase/queries'
-
+import { supabase } from '@/app/lib/supabase/index'
+import CustomButton from '@/components/Button/CustomButton'
 import Footer from '@/components/Footer/Footer'
 import './styles.css'
 
@@ -19,6 +20,12 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null)
   const [blogs, setBlogs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loggedInUser, setLoggedInUser] = useState(null)
+
+  const router = useRouter()
+  const handleClick = () => {
+    router.push(`/profile/${userId}/editprofile`)
+  }
 
   useEffect(() => {
     async function loadProfile() {
@@ -45,6 +52,14 @@ export default function ProfilePage() {
         )
 
         setBlogs(blogsWithAuthors)
+
+        const {
+          data: { user }
+        } = await supabase.auth.getUser()
+
+        setLoggedInUser(user)
+
+
       } catch (err) {
         console.error('Profile load error:', err)
       } finally {
@@ -84,8 +99,16 @@ export default function ProfilePage() {
       <Navbar />
 
       <div className="container">
-        <ProfileHeader profile={profile} />
-
+        <div className="profileheader">
+          <ProfileHeader profile={profile} />
+          <div>
+            {loggedInUser && loggedInUser.id === profile.id && (
+              <CustomButton handleClick={handleClick}>
+                Edit Profile
+              </CustomButton>
+            )}
+          </div>
+        </div>
         <div className="blogsarea">
           {/* Articles */}
           <div>
