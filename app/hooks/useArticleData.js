@@ -1,16 +1,16 @@
-
 import { useEffect, useState } from "react";
 import { getLatestArticle } from "../lib/supabase/queries";
 
-export function useArticlesData() {
+export function useArticlesData(activeFilter) {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     async function fetchArticles() {
+      setLoading(true);
       try {
-        const data = await getLatestArticle();
+        const data = await getLatestArticle(activeFilter);
         setBlogs(data || []);
       } catch (err) {
         setError(err.message);
@@ -20,6 +20,7 @@ export function useArticlesData() {
     }
 
     fetchArticles();
-  }, []);
+  }, [activeFilter]); 
 
-  return { blogs, loading, error };}
+  return { blogs, loading, error };
+}

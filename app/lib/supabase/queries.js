@@ -123,8 +123,8 @@ export async function getRelatedArticlesByAuthorId(authorId, currentBlogId) {
 }
 
 
-export async function getLatestArticle() {
-  const { data, error } = await supabase
+export async function getLatestArticle(category = "for_you") {
+  let query = supabase
     .from("blogs")
     .select(`
       blog_id,
@@ -140,10 +140,14 @@ export async function getLatestArticle() {
       )
     `)
     .eq("is_published", true)
-    .order("created_at", { ascending: true })
-    .limit(3);
+    .order("created_at", { ascending: false });
+  if (category !== "for_you") {
+    query = query.eq("category", category);
+  }
+  query = query.limit(3);
+
+  const { data, error } = await query;
 
   if (error) throw error;
-
   return data;
 }
