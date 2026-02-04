@@ -14,10 +14,12 @@
 .name{
   margin: 0;
   color: #000;
+  font-size: 28px;
+  font-weight: 600;
 }
 
 .bio{
-  margin-top: 6px;
+  /* margin-top: 6px; */
   max-width: 500px;
   color: #1f2937;
 }

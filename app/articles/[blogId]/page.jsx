@@ -16,7 +16,7 @@ import WeeklyRead from '@/components/WeeklyRead/WeeklyRead'
 import ProTip from '@/components/ProTip/ProTip'
 
 import './styles.css'
-import Navbar from '@/components/Navbar/Navbar'
+import Navbar from '@/app/components/Navbar/Navbar'
 import Footer from '@/components/Footer/Footer'
 import ArticleCardAuthorInfo from '../../../components/ArticleCardAuthorInfo/ArticleCardAuthorInfo'
 
@@ -68,6 +68,10 @@ export default function ArticlePage() {
         router.push('/login')
     }
 
+    function handleAuthorProfile() {
+        router.push(`/profile/${author.authorId}`);
+    }
+
     if (loading) return <p className="loading">Loading...</p>
     if (!blog) return <p className="error">Blog not found or unpublished</p>
 
@@ -77,7 +81,7 @@ export default function ArticlePage() {
             <div className="article-container">
 
                 <main className="article-main">
-                    <ArticleCardAuthorInfo author={author} createdAt={blog.created_at} />
+                    <ArticleCardAuthorInfo author={author} createdAt={blog.created_at} handleAuthorProfile={handleAuthorProfile}/>
 
                     {blog.title && (
                         <h1 className="article-title">
