@@ -60,8 +60,7 @@ export default function WritePage() {
             category: category,
             cover_image: coverImage,
             is_published: false,
-            author_id: user.id,
-            image_paths: []
+            author_id: user.id
           }
         ])
         .select();
@@ -119,8 +118,7 @@ export default function WritePage() {
             category: category,
             cover_image: coverImage,
             is_published: true,
-            author_id: user.id,
-            image_paths: []
+            author_id: user.id
           }
         ])
         .select();

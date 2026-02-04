@@ -3,18 +3,25 @@ import Icon from './Icon';
 import './Toolbar.css';
 
 function ToolbarButton({ onClick, className, title, type = 'button', icon, children }) {
-  const handleMouseDown = (e) => {
+  const handleClick = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     onClick && onClick();
   };
+  
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+  };
+  
   return (
     <button
+      onClick={handleClick}
       onMouseDown={handleMouseDown}
       className={className}
       title={title}
       type={type}
     >
-      {icon && <Icon src={icon.src} alt={icon.alt} />}
+      {icon && <Icon src={icon.src} alt={icon.alt} className="toolbar-icon" />}
       {children}
     </button>
   );

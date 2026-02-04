@@ -4,15 +4,20 @@ export default function ArticleCard({ article }) {
   if (!article) return null;
 
   const {
-    title,
-    content,
+    title = "Untitled",
+    content = "",
     cover_image,
-    category,
+    category = "General",
     profiles,
   } = article;
 
   const author = profiles?.name || "Anonymous";
-  const authorAvatar = profiles?.avatar_url ;
+  const authorAvatar =
+    profiles?.avatar_url && profiles.avatar_url.trim() !== ""
+      ? profiles.avatar_url
+      : "/avatar.jpg"; 
+  const coverImage =
+    cover_image && cover_image.trim() !== "" ? cover_image : null;
 
   return (
     <div className="w-full bg-white rounded-2xl border border-gray-200 p-6 flex justify-between gap-6">
@@ -23,22 +28,23 @@ export default function ArticleCard({ article }) {
             alt={author}
             width={32}
             height={32}
-            className="rounded-full"
+            className="rounded-full object-cover"
           />
+
           <span className="text-xs text-gray-500">{author}</span>
           <span className="text-xs text-gray-400">{category}</span>
         </div>
-
-        <h3 className="text-lg font-semibold mb-2">{title}</h3>
-
+        <h3 className="text-lg font-semibold mb-2 text-black">
+          {title}
+        </h3>
         <p className="text-sm text-gray-500 line-clamp-2">
-          {content}
+          {content || "No description available."}
         </p>
       </div>
 
-      {cover_image && (
+      {coverImage && (
         <Image
-          src={cover_image}
+          src={coverImage}
           alt={title}
           width={160}
           height={120}
