@@ -9,7 +9,6 @@ import { supabase } from "../../lib/supabase/index";
 const NAV_LINKS = [
   { label: "Home", href: "/", active: true },
   { label: "Articles", href: "/articles" },
-  { label: "Search", href: "/search" },
   { label: "Trending", href: "/trending" },
   { label: "Profile", href: "/profile" },
 ];
@@ -77,7 +76,7 @@ function UserAvatar({ user }) {
   return (
     <div className="flex items-center gap-3 cursor-pointer">
       <Image
-        src={user.user_metadata?.avatar_url || "/avatar.png"}
+        src={user.user_metadata?.avatar_url || "/avatar.jpg"}
         alt="User avatar"
         width={36}
         height={36}
