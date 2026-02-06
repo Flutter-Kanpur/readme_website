@@ -2,29 +2,50 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import AuthLayout from "@/components/auth/AuthLayout";
 import LeftPanel from "@/components/auth/LeftPanel";
 import Field from "@/components/auth/Field";
 import Divider from "@/components/auth/Divider";
 import PrimaryButton from "@/components/auth/PrimaryButton";
 import GoogleButton from "@/components/auth/GoogleButton";
+
 import styles from "@/styles/auth.module.css";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/app/lib/supabase";
+
+function mapSignUpError(error) {
+  const msg = (error?.message || "").toLowerCase();
+
+  if (error?.status === 429 || msg.includes("too many requests"))
+    return "Too many attempts. Please wait a minute and try again.";
+
+  if (
+    msg.includes("user already registered") ||
+    msg.includes("already registered")
+  )
+    return "User already exists! Please sign in instead.";
+
+  if (msg.includes("invalid email"))
+    return "Please enter a valid email address.";
+
+  if (
+    msg.includes("password") &&
+    (msg.includes("at least") || msg.includes("should"))
+  )
+    return error.message;
+
+  return error?.message || "Sign up failed. Please try again.";
+}
 
 export default function Register() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+  const router = useRouter();
 
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
-  
 
-
-  const handleChange = (key, value) =>
-    setForm((p) => ({ ...p, [key]: value }));
+  const handleChange = (key, value) => setForm((p) => ({ ...p, [key]: value }));
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -33,33 +54,54 @@ export default function Register() {
     setLoading(true);
     setMessage(null);
 
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const password = form.password;
+
+    // ✅ simple client validations
+    if (!name) {
+      setMessage({ type: "error", text: "Please enter your full name." });
+      setLoading(false);
+      return;
+    }
+    if (!email) {
+      setMessage({ type: "error", text: "Please enter your email." });
+      setLoading(false);
+      return;
+    }
+    if (!password) {
+      setMessage({ type: "error", text: "Please enter your password." });
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { error } = await supabase.auth.signUp({
-        email: form.email.trim(),
-        password: form.password,
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
         options: {
-          data: {
-            full_name: form.name,
-          },
+          data: { full_name: name },
         },
       });
 
       if (error) {
-        setMessage({ type: "error", text: error.message });
+        setMessage({ type: "error", text: mapSignUpError(error) });
         return;
       }
 
+      // You said email verification is disabled → user should be able to sign in
       setMessage({
         type: "success",
-        text: "Account created successfully!",
+        text: "Account created successfully! Please sign in.",
       });
-      setIsLoggedIn(true);
-      router.push("/")
-      
-    } catch {
+
+      // optional: redirect after short delay
+      setTimeout(() => router.push("/"), 600);
+    } catch (err) {
+      // ✅ show real error instead of hiding it
       setMessage({
         type: "error",
-        text: "Something went wrong. Please try again.",
+        text: err?.message || "Something went wrong. Please try again.",
       });
     } finally {
       setLoading(false);
@@ -126,7 +168,7 @@ export default function Register() {
 
           <p className={styles.footerText}>
             Already have an account?{" "}
-            <Link href="/" className={styles.footerLink}>
+            <Link href="/login" className={styles.footerLink}>
               Sign in
             </Link>
           </p>
