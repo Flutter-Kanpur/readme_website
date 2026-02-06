@@ -11,13 +11,13 @@ export default function ResetPassword() {
   const [message, setMessage] = useState(null);
   const [ready, setReady] = useState(false);
 
-  // ✅ Step 1: Convert the recovery link into an auth session
+  
   useEffect(() => {
     const run = async () => {
       setMessage(null);
 
       try {
-        // Supabase reset links often include ?code=... (PKCE) OR tokens in the URL
+        
         const url = new URL(window.location.href);
         const code = url.searchParams.get("code");
 
@@ -33,7 +33,7 @@ export default function ResetPassword() {
           }
         }
 
-        // after exchange, session should exist
+        
         const { data } = await supabase.auth.getSession();
         if (!data?.session) {
           setMessage({
@@ -57,7 +57,7 @@ export default function ResetPassword() {
     run();
   }, []);
 
-  // ✅ Step 2: Update password (works only if session exists)
+
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     if (!ready || loading) return;

@@ -41,7 +41,7 @@ export default function ForgotPassword() {
         return;
       }
 
-      // Security-friendly message (don’t reveal if user exists)
+      
       setMessage({
         type: "success",
         text: "If an account exists for this email, a reset link has been sent.",
