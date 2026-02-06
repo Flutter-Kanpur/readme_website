@@ -30,6 +30,15 @@
   background-color: rgb(243, 244, 246);
 }
 
+.toolbar-btn-active {
+  background-color: rgb(59, 130, 246) !important;
+  color: white !important;
+}
+
+.toolbar-btn-active:hover {
+  background-color: rgb(37, 99, 235) !important;
+}
+
 .toolbar-btn-bold {
   font-weight: 600;
   color: rgb(55, 65, 81);

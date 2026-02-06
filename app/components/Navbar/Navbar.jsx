@@ -10,7 +10,6 @@ const NAV_LINKS = [
   { label: "Home", href: "/", active: true },
   { label: "Articles", href: "/articles" },
   { label: "Trending", href: "/trending" },
-  { label: "Profile", href: "/profile" },
 ];
 
 
@@ -44,7 +43,7 @@ export default function Navbar() {
         <div className="text-xl font-bold text-black">Readme</div>
 
 
-        <div className="hidden md:flex gap-8">
+        <div className="flex gap-8">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
@@ -55,12 +54,20 @@ export default function Navbar() {
             </Link>
           ))}
           {user && (
-            <Link
-              href={`/profile/${user.id}`}
-              className="text-gray-600 hover:text-black"
-            >
-              Profile
-            </Link>
+            <>
+              <Link
+                href="/drafts"
+                className="text-gray-600 hover:text-black"
+              >
+                Drafts
+              </Link>
+              <Link
+                href={`/profile/${user.id}`}
+                className="text-gray-600 hover:text-black"
+              >
+                Profile
+              </Link>
+            </>
           )}
         </div>
 
