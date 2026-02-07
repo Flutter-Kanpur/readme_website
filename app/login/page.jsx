@@ -13,14 +13,13 @@ import { supabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
-    const router = useRouter();
+  const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const handleChange = (key, value) =>
-    setForm((p) => ({ ...p, [key]: value }));
+  const handleChange = (key, value) => setForm((p) => ({ ...p, [key]: value }));
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -42,9 +41,15 @@ export default function Home() {
 
       setMessage({ type: "success", text: "Signed in successfully!" });
       setIsLoggedIn(true);
-      router.push("/")
-    } catch (error){
-      setMessage({ type: "error", text: error.response?.data?.message || error.message || "An unexpected error occurred." });
+      router.push("/");
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text:
+          error.response?.data?.message ||
+          error.message ||
+          "An unexpected error occurred.",
+      });
     } finally {
       setLoading(false);
     }
@@ -77,7 +82,7 @@ export default function Home() {
               value={form.password}
               onChange={(e) => handleChange("password", e.target.value)}
               rightEl={
-                <Link href="#" className={styles.linkSmall}>
+                <Link href="/forgot-password" className={styles.linkSmall}>
                   FORGOT PASSWORD?
                 </Link>
               }
