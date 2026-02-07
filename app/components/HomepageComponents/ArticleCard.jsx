@@ -4,6 +4,13 @@ import Link from "next/link";
 export default function ArticleCard({ article }) {
   if (!article) return null;
 
+  function htmlToText(html) {
+  if (typeof window === "undefined") return "";
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent || div.innerText || "";
+}
+
   const {
     blog_id,
     title = "Untitled",
@@ -23,8 +30,8 @@ export default function ArticleCard({ article }) {
 
   return (
     <Link href={`/articles/${blog_id}`} className="block">
-      <div className="w-full bg-white rounded-2xl border border-gray-200 p-6 flex justify-between gap-6 cursor-pointer hover:shadow-lg transition-shadow duration-200">
-      <div className="flex-1">
+      <div style={{background: "#fff",padding: "20px",borderRadius: "12px",display: "flex",justifyContent: "space-between",gap: "20px",boxShadow: "0 4px 10px rgba(0, 0, 0, 0.05)",overflow: "hidden",}}>
+      <div className="flex-1 min-w-0 overflow-hidden">
         <div className="flex items-center gap-3 mb-3">
           <Image
             src={authorAvatar}
@@ -40,8 +47,8 @@ export default function ArticleCard({ article }) {
         <h3 className="text-lg font-semibold mb-2 text-black">
           {title}
         </h3>
-        <p className="text-sm text-gray-500 line-clamp-2">
-          {content || "No description available."}
+        <p className="text-sm text-gray-500 line-clamp-2 break-words overflow-hidden">
+          {htmlToText(content).slice(0, 1200) || "No description available."}
         </p>
       </div>
 
@@ -51,7 +58,7 @@ export default function ArticleCard({ article }) {
           alt={title}
           width={160}
           height={120}
-          className="rounded-xl object-cover"
+          className="rounded-xl object-cover shrink-0"
         />
       )}
       </div>

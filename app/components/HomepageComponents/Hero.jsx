@@ -18,7 +18,7 @@ const HERO_CONTENT = {
     },
     {
       label: "Explore Topics →",
-      href: "/articles",
+      href: "/#latest-articles",
       primary: false,
     },
   ],
@@ -45,8 +45,8 @@ export default function Hero() {
             <button
               className={
                 action.primary
-                  ? "bg-black text-white px-8 py-5 rounded-full text-sm font-medium flex items-center gap-2 hover:opacity-90"
-                  : "border border-gray-300 px-8 py-5 rounded-full text-sm font-medium text-black hover:bg-gray-50"
+                  ? "bg-black text-white px-8 py-5 rounded-full text-sm font-medium flex items-center gap-2 hover:opacity-90 cursor-pointer"
+                  : "border border-gray-300 px-8 py-5 rounded-full text-sm font-medium text-black hover:bg-gray-50 cursor-pointer"
               }
             >
               {action.label}

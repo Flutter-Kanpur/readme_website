@@ -6,6 +6,7 @@
   justify-content: space-between;
   gap: 20px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
 }
 
 .title {
@@ -19,6 +20,8 @@
   margin-top: 8px;
   color: #666;
   max-width: 500px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .meta {
@@ -50,4 +53,5 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
 }

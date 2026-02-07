@@ -107,7 +107,7 @@ const handleSaveClick = async () => {
       {/* Avatar */}
       <div className={styles.avatarSection}>
         <Image
-          src={preview || profile.avatar_url}
+          src={preview || profile.avatar_url || avatar.png}
           alt="Profile"
           className={styles.avatar}
           width={80}

@@ -7,8 +7,6 @@ import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   getProfileById,
-  getPublishedBlogsByAuthor,
-  getAuthorByBlogId
 } from '@/app/lib/supabase/queries'
 import { supabase } from '@/app/lib/supabase/index'
 

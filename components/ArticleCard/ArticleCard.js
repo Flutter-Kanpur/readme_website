@@ -4,18 +4,25 @@ import ArticleCardAuthorInfo from "@/components/ArticleCardAuthorInfo/ArticleCar
 import "./styles.css";
 
 export default function ArticleCard({ blog }) {
+  
+function htmlToText(html) {
+  if (typeof window === "undefined") return "";
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent || div.innerText || "";
+}
+
   return (
     <div className='card'>
       <div className='content'>
-        <div className='meta'>
+        <div>
           <ArticleCardAuthorInfo author={blog.author} />
-          <span>{new Date(blog.created_at).toDateString()}</span>
         </div>
 
         <h1 className='title'>{blog.title}</h1>
 
         <p className='desc'>
-          {blog.excerpt || blog.content.slice(0, 120)}...
+          {(htmlToText(blog.content).slice(0, 120))}...
         </p>
 
         <div className='meta'>
