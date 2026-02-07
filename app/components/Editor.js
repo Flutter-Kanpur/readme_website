@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import Toolbar from "./Toolbar";
 import Icon from './Icon';
 import './Editor.css';
@@ -18,11 +18,121 @@ export default function Editor({ onDataChange }) {
     underline: false
   });
 
+  // Undo/Redo state management
+  const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
+  const [isUndoRedoOperation, setIsUndoRedoOperation] = useState(false);
+
+  // Save state to undo stack
+  const saveState = useCallback(() => {
+    if (isUndoRedoOperation) return;
+    
+    const editor = editorRef.current;
+    const title = titleRef.current;
+    if (!editor || !title) return;
+
+    const state = {
+      content: editor.innerHTML,
+      title: title.value,
+      timestamp: Date.now()
+    };
+
+    setUndoStack(prev => {
+      const newStack = [...prev, state];
+      // Keep only last 50 states to prevent memory issues
+      return newStack.slice(-50);
+    });
+    
+    // Clear redo stack when new action is performed
+    setRedoStack([]);
+  }, [isUndoRedoOperation]);
+
+  // Undo function
+  const performUndo = useCallback(() => {
+    if (undoStack.length === 0) return;
+
+    const editor = editorRef.current;
+    const title = titleRef.current;
+    if (!editor || !title) return;
+
+    // Save current state to redo stack
+    const currentState = {
+      content: editor.innerHTML,
+      title: title.value,
+      timestamp: Date.now()
+    };
+
+    const prevState = undoStack[undoStack.length - 1];
+    
+    setIsUndoRedoOperation(true);
+    
+    // Restore previous state
+    editor.innerHTML = prevState.content;
+    title.value = prevState.title;
+    
+    // Update stacks
+    setUndoStack(prev => prev.slice(0, -1));
+    setRedoStack(prev => [...prev, currentState]);
+    
+    // Trigger data change
+    onDataChange?.({ title: prevState.title, content: prevState.content });
+    
+    setTimeout(() => {
+      setIsUndoRedoOperation(false);
+      checkFormatStates();
+    }, 0);
+  }, [undoStack, onDataChange]);
+
+  // Redo function
+  const performRedo = useCallback(() => {
+    if (redoStack.length === 0) return;
+
+    const editor = editorRef.current;
+    const title = titleRef.current;
+    if (!editor || !title) return;
+
+    // Save current state to undo stack
+    const currentState = {
+      content: editor.innerHTML,
+      title: title.value,
+      timestamp: Date.now()
+    };
+
+    const nextState = redoStack[redoStack.length - 1];
+    
+    setIsUndoRedoOperation(true);
+    
+    // Restore next state
+    editor.innerHTML = nextState.content;
+    title.value = nextState.title;
+    
+    // Update stacks
+    setRedoStack(prev => prev.slice(0, -1));
+    setUndoStack(prev => [...prev, currentState]);
+    
+    // Trigger data change
+    onDataChange?.({ title: nextState.title, content: nextState.content });
+    
+    setTimeout(() => {
+      setIsUndoRedoOperation(false);
+      checkFormatStates();
+    }, 0);
+  }, [redoStack, onDataChange]);
+
   useEffect(() => {
     const handleChange = () => {
+      if (isUndoRedoOperation) return;
+      
       const title = titleRef.current?.value || '';
       const content = editorRef.current?.innerHTML || '';
       onDataChange?.({ title, content });
+      
+      // Save state with debouncing
+      const timeoutId = setTimeout(() => {
+        saveState();
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
     };
 
     const handleSelectionChange = () => {
@@ -38,6 +148,9 @@ export default function Editor({ onDataChange }) {
     editorElement?.addEventListener('mouseup', handleSelectionChange);
     document.addEventListener('selectionchange', handleSelectionChange);
 
+    // Save initial state
+    saveState();
+
     return () => {
       titleElement?.removeEventListener('input', handleChange);
       editorElement?.removeEventListener('input', handleChange);
@@ -45,7 +158,7 @@ export default function Editor({ onDataChange }) {
       editorElement?.removeEventListener('mouseup', handleSelectionChange);
       document.removeEventListener('selectionchange', handleSelectionChange);
     };
-  }, [onDataChange]);
+  }, [onDataChange, saveState, isUndoRedoOperation]);
 
   const checkFormatStates = () => {
     const selection = window.getSelection();
@@ -85,130 +198,193 @@ export default function Editor({ onDataChange }) {
       return;
     }
 
-    const fragment = range.extractContents();
+    // Save state before making changes
+    saveState();
 
-    let wrapper;
-    if (command === 'bold') {
-      wrapper = document.createElement('strong');
-    } else if (command === 'italic') {
-      wrapper = document.createElement('em');
-    } else if (command === 'underline') {
-      wrapper = document.createElement('u');
-    } else {
-      return;
-    }
+    // Save the selection for restoring later
+    const savedRange = range.cloneRange();
+    const selectedText = range.toString();
 
-    wrapper.appendChild(fragment);
-    
-    // Insert the formatted wrapper
-    range.insertNode(wrapper);
-
-    // Create a reset span with explicit neutral styles
-    const resetSpan = document.createElement('span');
-    resetSpan.style.fontWeight = 'normal';
-    resetSpan.style.fontStyle = 'normal';
-    resetSpan.style.textDecoration = 'none';
-    resetSpan.style.fontSize = 'inherit';
-    resetSpan.style.color = 'inherit';
-    
-    // Add zero-width space inside reset span
-    const zwsp = document.createTextNode('\u200B');
-    resetSpan.appendChild(zwsp);
-
-    // Insert reset span after the wrapper
-    if (wrapper.nextSibling) {
-      wrapper.parentNode.insertBefore(resetSpan, wrapper.nextSibling);
-    } else {
-      wrapper.parentNode.appendChild(resetSpan);
-    }
-
-    // Position cursor at the zero-width space
-    const newRange = document.createRange();
-    newRange.setStart(zwsp, 1);
-    newRange.collapse(true);
-
-    selection.removeAllRanges();
-    selection.addRange(newRange);
-
-    // Force style reset with removeFormat in next tick
-    setTimeout(() => {
-      if (document.getSelection()?.rangeCount > 0) {
-        // Save current selection
-        const currentRange = document.getSelection().getRangeAt(0);
-        
-        // Apply removeFormat to force style reset
-        document.execCommand('removeFormat', false, null);
-        
-        // Restore selection if it was lost
-        if (currentRange && currentRange.startContainer === zwsp) {
-          const restoreRange = document.createRange();
-          restoreRange.setStart(zwsp, 1);
-          restoreRange.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(restoreRange);
-        }
+    // Use document.execCommand for better undo/redo integration
+    try {
+      let execCommand;
+      switch (command) {
+        case 'bold':
+          execCommand = 'bold';
+          break;
+        case 'italic':
+          execCommand = 'italic';
+          break;
+        case 'underline':
+          execCommand = 'underline';
+          break;
+        default:
+          return;
       }
-    }, 0);
 
-    // Clean up empty reset spans after typing starts
-    const cleanupResetSpan = () => {
-      if (resetSpan.parentNode && resetSpan.textContent === '\u200B') {
-        // Check if cursor has moved away
+      // Execute the command - this will be properly tracked in the undo stack
+      document.execCommand(execCommand, false, null);
+
+      // Ensure the cursor is positioned correctly and styles are updated
+      setTimeout(() => {
+        checkFormatStates();
+        
+        // Create a reset span for future typing if cursor is at the end
         const currentSelection = window.getSelection();
-        if (!currentSelection?.rangeCount || 
-            currentSelection.getRangeAt(0).startContainer !== zwsp) {
-          resetSpan.remove();
+        if (currentSelection && currentSelection.rangeCount > 0) {
+          const currentRange = currentSelection.getRangeAt(0);
+          
+          // Only add reset span if we're at the end of formatted text
+          if (currentRange.collapsed) {
+            const resetSpan = document.createElement('span');
+            resetSpan.style.fontWeight = 'normal';
+            resetSpan.style.fontStyle = 'normal';
+            resetSpan.style.textDecoration = 'none';
+            resetSpan.style.fontSize = 'inherit';
+            resetSpan.style.color = 'inherit';
+            
+            const zwsp = document.createTextNode('\u200B');
+            resetSpan.appendChild(zwsp);
+            
+            try {
+              currentRange.insertNode(resetSpan);
+              
+              // Position cursor at the zero-width space
+              const newRange = document.createRange();
+              newRange.setStart(zwsp, 1);
+              newRange.collapse(true);
+              currentSelection.removeAllRanges();
+              currentSelection.addRange(newRange);
+              
+              // Clean up the reset span when user types
+              const cleanupHandler = () => {
+                if (resetSpan.parentNode && resetSpan.textContent === '\u200B') {
+                  resetSpan.remove();
+                }
+                editor.removeEventListener('input', cleanupHandler);
+              };
+              editor.addEventListener('input', cleanupHandler, { once: true });
+              
+            } catch (e) {
+              // If insertion fails, just continue
+              console.warn('Could not insert reset span:', e);
+            }
+          }
         }
+      }, 0);
+
+    } catch (error) {
+      console.error('Format command failed:', error);
+      // Fallback to the original manual method if execCommand fails
+      const fragment = savedRange.extractContents();
+      let wrapper;
+      if (command === 'bold') {
+        wrapper = document.createElement('strong');
+      } else if (command === 'italic') {
+        wrapper = document.createElement('em');
+      } else if (command === 'underline') {
+        wrapper = document.createElement('u');
       }
-    };
-
-    // Set up cleanup after a brief delay
-    setTimeout(cleanupResetSpan, 100);
-    
-    // Also clean up on next input
-    const handleNextInput = () => {
-      cleanupResetSpan();
-      editor.removeEventListener('input', handleNextInput, { once: true });
-    };
-    editor.addEventListener('input', handleNextInput, { once: true });
-
-    // Scroll the reset span into view
-    resetSpan.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      
+      if (wrapper) {
+        wrapper.appendChild(fragment);
+        savedRange.insertNode(wrapper);
+        
+        // Position cursor after the wrapper
+        const newRange = document.createRange();
+        newRange.setStartAfter(wrapper);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    }
   };
 
   const handleOrderedList = () => {
-    editorRef.current?.focus();
+    const editor = editorRef.current;
+    if (!editor) return;
+    
+    // Save state before making changes
+    saveState();
+    
+    editor.focus();
+    // Use execCommand for better undo/redo integration
     document.execCommand('insertOrderedList', false, null);
+    
+    // Update format states after the operation
+    setTimeout(() => checkFormatStates(), 0);
   };
 
   const handleUnorderedList = () => {
-    editorRef.current?.focus();
+    const editor = editorRef.current;
+    if (!editor) return;
+    
+    // Save state before making changes
+    saveState();
+    
+    editor.focus();
+    // Use execCommand for better undo/redo integration
     document.execCommand('insertUnorderedList', false, null);
+    
+    // Update format states after the operation
+    setTimeout(() => checkFormatStates(), 0);
   };
 
   const handleQuote = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    
     const selection = window.getSelection();
     if (selection.rangeCount > 0 && selection.toString().trim()) {
-      const range = selection.getRangeAt(0);
-      const selectedContent = range.extractContents();
+      // Save state before making changes
+      saveState();
       
-      const blockquote = document.createElement('blockquote');
-      blockquote.style.borderLeft = '4px solid #ccc';
-      blockquote.style.paddingLeft = '16px';
-      blockquote.style.marginLeft = '0';
-      blockquote.style.marginTop = '8px';
-      blockquote.style.marginBottom = '8px';
-      blockquote.style.color = '#666';
-      blockquote.style.fontStyle = 'italic';
-      blockquote.appendChild(selectedContent);
+      editor.focus();
       
-      range.insertNode(blockquote);
-      range.setStartAfter(blockquote);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
+      // Try to use formatBlock for better undo integration
+      try {
+        document.execCommand('formatBlock', false, 'blockquote');
+        
+        // Apply custom styling to the blockquote
+        setTimeout(() => {
+          const blockquotes = editor.querySelectorAll('blockquote');
+          const lastBlockquote = blockquotes[blockquotes.length - 1];
+          if (lastBlockquote && !lastBlockquote.hasAttribute('data-styled')) {
+            lastBlockquote.style.borderLeft = '4px solid #ccc';
+            lastBlockquote.style.paddingLeft = '16px';
+            lastBlockquote.style.marginLeft = '0';
+            lastBlockquote.style.marginTop = '8px';
+            lastBlockquote.style.marginBottom = '8px';
+            lastBlockquote.style.color = '#666';
+            lastBlockquote.style.fontStyle = 'italic';
+            lastBlockquote.setAttribute('data-styled', 'true');
+          }
+          checkFormatStates();
+        }, 0);
+        
+      } catch (error) {
+        // Fallback to manual method if formatBlock fails
+        console.warn('formatBlock failed, using manual method:', error);
+        const range = selection.getRangeAt(0);
+        const selectedContent = range.extractContents();
+        
+        const blockquote = document.createElement('blockquote');
+        blockquote.style.borderLeft = '4px solid #ccc';
+        blockquote.style.paddingLeft = '16px';
+        blockquote.style.marginLeft = '0';
+        blockquote.style.marginTop = '8px';
+        blockquote.style.marginBottom = '8px';
+        blockquote.style.color = '#666';
+        blockquote.style.fontStyle = 'italic';
+        blockquote.appendChild(selectedContent);
+        
+        range.insertNode(blockquote);
+        range.setStartAfter(blockquote);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
       
-      editorRef.current?.focus();
     } else {
       alert('Please select some text to quote');
     }
@@ -236,27 +412,56 @@ export default function Editor({ onDataChange }) {
       return;
     }
 
+    // Save state before making changes
+    saveState();
+
     if (savedSelection) {
       const selection = window.getSelection();
       selection.removeAllRanges();
       selection.addRange(savedSelection.cloneRange());
       
-      const anchor = document.createElement('a');
-      anchor.href = linkUrl;
-      anchor.target = '_blank';
-      anchor.rel = 'noopener noreferrer';
-      anchor.style.color = '#3b82f6';
-      anchor.style.textDecoration = 'underline';
-      anchor.textContent = savedSelection.toString();
+      // Focus the editor to ensure the command works properly
+      editorRef.current?.focus();
       
-      savedSelection.deleteContents();
-      savedSelection.insertNode(anchor);
-      
-      const newRange = document.createRange();
-      newRange.setStartAfter(anchor);
-      newRange.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
+      try {
+        // Try to use createLink command for better undo integration
+        document.execCommand('createLink', false, linkUrl);
+        
+        // Apply custom styling to the link
+        setTimeout(() => {
+          const links = editorRef.current?.querySelectorAll('a[href]');
+          if (links && links.length > 0) {
+            const lastLink = links[links.length - 1];
+            if (lastLink && !lastLink.hasAttribute('data-styled')) {
+              lastLink.target = '_blank';
+              lastLink.rel = 'noopener noreferrer';
+              lastLink.style.color = '#3b82f6';
+              lastLink.style.textDecoration = 'underline';
+              lastLink.setAttribute('data-styled', 'true');
+            }
+          }
+        }, 0);
+        
+      } catch (error) {
+        // Fallback to manual method if createLink fails
+        console.warn('createLink failed, using manual method:', error);
+        const anchor = document.createElement('a');
+        anchor.href = linkUrl;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        anchor.style.color = '#3b82f6';
+        anchor.style.textDecoration = 'underline';
+        anchor.textContent = savedSelection.toString();
+        
+        savedSelection.deleteContents();
+        savedSelection.insertNode(anchor);
+        
+        const newRange = document.createRange();
+        newRange.setStartAfter(anchor);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
       
       editorRef.current?.focus();
     }
@@ -280,6 +485,9 @@ export default function Editor({ onDataChange }) {
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
+      // Save state before making changes
+      saveState();
+      
       const reader = new FileReader();
       reader.onload = (event) => {
         const imgUrl = event.target.result;
@@ -290,12 +498,12 @@ export default function Editor({ onDataChange }) {
         img.style.height = 'auto';
         img.style.resize = 'both';
         img.style.display = 'block';
-        img.style.margin = '10px 0';
+        img.style.margin = '0';
         img.contentEditable = 'false';
         
         const wrapper = document.createElement('div');
         wrapper.contentEditable = 'false';
-        wrapper.style.display = 'inline-block';
+        wrapper.style.display = 'block';
         wrapper.style.position = 'relative';
         wrapper.style.maxWidth = '100%';
         wrapper.style.resize = 'both';
@@ -356,11 +564,31 @@ export default function Editor({ onDataChange }) {
         const selection = window.getSelection();
         if (selection.rangeCount > 0) {
           const range = selection.getRangeAt(0);
+          
+          // Insert the image wrapper
           range.insertNode(wrapper);
-          range.setStartAfter(wrapper);
-          range.collapse(true);
+          
+          // Create a line break and a new paragraph after the image
+          const lineBreak = document.createElement('br');
+          const newParagraph = document.createElement('div');
+          newParagraph.innerHTML = '<br>'; // Ensures the div has content for cursor placement
+          newParagraph.style.minHeight = '1.5em'; // Minimum height to prevent collapse
+          
+          // Insert line break and new paragraph after the wrapper
+          if (wrapper.nextSibling) {
+            wrapper.parentNode.insertBefore(lineBreak, wrapper.nextSibling);
+            wrapper.parentNode.insertBefore(newParagraph, lineBreak.nextSibling);
+          } else {
+            wrapper.parentNode.appendChild(lineBreak);
+            wrapper.parentNode.appendChild(newParagraph);
+          }
+          
+          // Position cursor in the new paragraph
+          const newRange = document.createRange();
+          newRange.setStart(newParagraph, 0);
+          newRange.collapse(true);
           selection.removeAllRanges();
-          selection.addRange(range);
+          selection.addRange(newRange);
         }
         
         editorRef.current?.focus();
@@ -384,6 +612,39 @@ export default function Editor({ onDataChange }) {
   };
 
   const handleKeyDown = (e) => {
+    // Handle Enter key for better line break behavior after images
+    if (e.key === 'Enter') {
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const container = range.startContainer;
+        
+        // Check if we're right after an image wrapper
+        if (container.nodeType === Node.ELEMENT_NODE) {
+          const prevSibling = container.previousSibling;
+          if (prevSibling && prevSibling.classList && prevSibling.classList.contains('editor-image-wrapper')) {
+            e.preventDefault();
+            
+            // Create a new paragraph with proper spacing
+            const newParagraph = document.createElement('div');
+            newParagraph.innerHTML = '<br>';
+            newParagraph.style.minHeight = '1.5em';
+            
+            range.insertNode(newParagraph);
+            
+            // Position cursor in the new paragraph
+            const newRange = document.createRange();
+            newRange.setStart(newParagraph, 0);
+            newRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+            
+            return;
+          }
+        }
+      }
+    }
+    
     if (e.ctrlKey || e.metaKey) {
       switch (e.key) {
         case 'b':
@@ -399,20 +660,23 @@ export default function Editor({ onDataChange }) {
           handleFormat('underline');
           break;
         case 'z':
-          if (e.shiftKey) {
-            // Ctrl+Shift+Z for redo
+          // Handle Undo (Ctrl+Z)
+          if (!e.shiftKey) {
             e.preventDefault();
-            handleRedo();
-          } else {
-            // Ctrl+Z for undo
-            e.preventDefault();
-            handleUndo();
+            performUndo();
           }
           break;
         case 'y':
-          // Ctrl+Y for redo (alternative)
+          // Handle Redo (Ctrl+Y)
           e.preventDefault();
-          handleRedo();
+          performRedo();
+          break;
+        case 'Z':
+          // Handle Redo (Ctrl+Shift+Z) - alternative redo shortcut
+          if (e.shiftKey) {
+            e.preventDefault();
+            performRedo();
+          }
           break;
         default:
           break;
@@ -420,15 +684,7 @@ export default function Editor({ onDataChange }) {
     }
   };
 
-  const handleUndo = () => {
-    editorRef.current?.focus();
-    document.execCommand('undo', false, null);
-  };
 
-  const handleRedo = () => {
-    editorRef.current?.focus();
-    document.execCommand('redo', false, null);
-  };
 
   return (
     <div className="editor-container">
@@ -486,8 +742,6 @@ export default function Editor({ onDataChange }) {
         <Toolbar
           buttons={[
             [
-              { label: '↶', onClick: handleUndo, className: 'toolbar-btn toolbar-btn-undo', title: 'Undo (Ctrl+Z)' },
-              { label: '↷', onClick: handleRedo, className: 'toolbar-btn toolbar-btn-redo', title: 'Redo (Ctrl+Y)' },
               { label: 'B', onClick: () => handleFormat('bold'), className: `toolbar-btn toolbar-btn-bold ${formatStates.bold ? 'toolbar-btn-active' : ''}`, title: 'Bold (Ctrl+B)' },
               { label: 'I', onClick: () => handleFormat('italic'), className: `toolbar-btn toolbar-btn-italic ${formatStates.italic ? 'toolbar-btn-active' : ''}`, title: 'Italic (Ctrl+I)' },
               { label: 'U', onClick: () => handleFormat('underline'), className: `toolbar-btn toolbar-btn-underline ${formatStates.underline ? 'toolbar-btn-active' : ''}`, title: 'Underline (Ctrl+U)' },
