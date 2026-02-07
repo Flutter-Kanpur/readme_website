@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { supabase } from "../../lib/supabase/index";
+import { supabase } from "@/app/lib/supabase";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", active: true },
