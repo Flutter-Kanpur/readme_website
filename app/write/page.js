@@ -3,11 +3,11 @@
 import { useState, useRef } from 'react';
 import Editor from "../components/Editor";
 import ArticleSettings from "../components/ArticleSettings";
+import Navbar from '../components/Navbar/Navbar';
 import { supabase } from "@/lib/supabase";
 import './write.css';
 
 export default function WritePage() {
-  // Auth state - set to true for now (authenticated)
   const [isAuthenticated] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -137,32 +137,7 @@ export default function WritePage() {
 
   return (
     <div className="write-page">
-
-      <div className="write-header">
-        <span className="write-logo">Readme</span>
-
-        <div className="write-actions">
-          {message && (
-            <span className={`write-message ${message.includes('Error') ? 'write-message-error' : 'write-message-success'}`}>
-              {message}
-            </span>
-          )}
-          <button 
-            onClick={handleSaveDraft}
-            disabled={saving}
-            className="write-draft-btn"
-          >
-            {saving ? 'Saving...' : 'Save Draft'}
-          </button>
-          <button 
-            onClick={handlePublish}
-            disabled={publishing}
-            className="write-publish-btn"
-          >
-            {publishing ? 'Publishing...' : 'Publish'}
-          </button>
-        </div>
-      </div>
+      <Navbar />
 
       <div className="write-content">
         <div className="write-editor-section">
@@ -174,7 +149,32 @@ export default function WritePage() {
         <div className="write-sidebar">
           <ArticleSettings onDataChange={updateEditorData} />
         </div>
+      </div>
 
+      <div className="write-footer">
+        <div className="write-actions">
+          {message && (
+            <span className={`write-message ${message.includes('Error') ? 'write-message-error' : 'write-message-success'}`}>
+              {message}
+            </span>
+          )}
+          <div className="write-buttons">
+            <button 
+              onClick={handleSaveDraft}
+              disabled={saving}
+              className="write-draft-btn"
+            >
+              {saving ? 'Saving...' : 'Save Draft'}
+            </button>
+            <button 
+              onClick={handlePublish}
+              disabled={publishing}
+              className="write-publish-btn"
+            >
+              {publishing ? 'Publishing...' : 'Publish'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
