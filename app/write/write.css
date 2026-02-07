@@ -5,23 +5,24 @@
   background-color: white;
 }
 
-.write-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgb(229, 231, 235);
+.write-footer {
+  border-top: 1px solid rgb(229, 231, 235);
   padding: 1rem 2rem;
-}
-
-.write-logo {
-  font-weight: 600;
-  font-size: 1.125rem;
+  background-color: white;
+  margin-top: auto;
 }
 
 .write-actions {
   display: flex;
+  justify-content: flex-end;
   align-items: center;
+  width: 100%;
+}
+
+.write-buttons {
+  display: flex;
   gap: 1rem;
+  align-items: center;
 }
 
 .write-message {

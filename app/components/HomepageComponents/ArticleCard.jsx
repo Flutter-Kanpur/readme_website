@@ -1,9 +1,11 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function ArticleCard({ article }) {
   if (!article) return null;
 
   const {
+    blog_id,
     title = "Untitled",
     content = "",
     cover_image,
@@ -20,7 +22,8 @@ export default function ArticleCard({ article }) {
     cover_image && cover_image.trim() !== "" ? cover_image : null;
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-gray-200 p-6 flex justify-between gap-6">
+    <Link href={`/articles/${blog_id}`} className="block">
+      <div className="w-full bg-white rounded-2xl border border-gray-200 p-6 flex justify-between gap-6 cursor-pointer hover:shadow-lg transition-shadow duration-200">
       <div className="flex-1">
         <div className="flex items-center gap-3 mb-3">
           <Image
@@ -51,6 +54,7 @@ export default function ArticleCard({ article }) {
           className="rounded-xl object-cover"
         />
       )}
-    </div>
+      </div>
+    </Link>
   );
 }

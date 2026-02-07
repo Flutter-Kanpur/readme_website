@@ -59,12 +59,20 @@ export default function Navbar() {
             </Link>
           ))}
           {user && (
-            <Link
-              href={`/profile/${user.id}`}
-              className="text-gray-600 hover:text-black"
-            >
-              Profile
-            </Link>
+            <>
+              <Link
+                href="/drafts"
+                className="text-gray-600 hover:text-black"
+              >
+                Drafts
+              </Link>
+              <Link
+                href={`/profile/${user.id}`}
+                className="text-gray-600 hover:text-black"
+              >
+                Profile
+              </Link>
+            </>
           )}
         </div>
         {user ? (

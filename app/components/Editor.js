@@ -12,6 +12,11 @@ export default function Editor({ onDataChange }) {
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [savedSelection, setSavedSelection] = useState(null);
+  const [formatStates, setFormatStates] = useState({
+    bold: false,
+    italic: false,
+    underline: false
+  });
 
   useEffect(() => {
     const handleChange = () => {
@@ -20,17 +25,50 @@ export default function Editor({ onDataChange }) {
       onDataChange?.({ title, content });
     };
 
+    const handleSelectionChange = () => {
+      checkFormatStates();
+    };
+
     const titleElement = titleRef.current;
     const editorElement = editorRef.current;
 
     titleElement?.addEventListener('input', handleChange);
     editorElement?.addEventListener('input', handleChange);
+    editorElement?.addEventListener('keyup', handleSelectionChange);
+    editorElement?.addEventListener('mouseup', handleSelectionChange);
+    document.addEventListener('selectionchange', handleSelectionChange);
 
     return () => {
       titleElement?.removeEventListener('input', handleChange);
       editorElement?.removeEventListener('input', handleChange);
+      editorElement?.removeEventListener('keyup', handleSelectionChange);
+      editorElement?.removeEventListener('mouseup', handleSelectionChange);
+      document.removeEventListener('selectionchange', handleSelectionChange);
     };
   }, [onDataChange]);
+
+  const checkFormatStates = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    const parentElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE 
+      ? range.commonAncestorContainer.parentElement 
+      : range.commonAncestorContainer;
+
+    const isBold = document.queryCommandState('bold') || 
+                   parentElement.closest('strong, b, [style*="font-weight: bold"]') !== null;
+    const isItalic = document.queryCommandState('italic') || 
+                     parentElement.closest('em, i, [style*="font-style: italic"]') !== null;
+    const isUnderline = document.queryCommandState('underline') || 
+                        parentElement.closest('u, [style*="text-decoration: underline"]') !== null;
+
+    setFormatStates({
+      bold: isBold,
+      italic: isItalic,
+      underline: isUnderline
+    });
+  };
 
   const handleFormat = (command) => {
     const editor = editorRef.current;
@@ -61,30 +99,80 @@ export default function Editor({ onDataChange }) {
     }
 
     wrapper.appendChild(fragment);
+    
+    // Insert the formatted wrapper
+    range.insertNode(wrapper);
 
+    // Create a reset span with explicit neutral styles
     const resetSpan = document.createElement('span');
     resetSpan.style.fontWeight = 'normal';
     resetSpan.style.fontStyle = 'normal';
     resetSpan.style.textDecoration = 'none';
-
+    resetSpan.style.fontSize = 'inherit';
+    resetSpan.style.color = 'inherit';
+    
+    // Add zero-width space inside reset span
     const zwsp = document.createTextNode('\u200B');
     resetSpan.appendChild(zwsp);
 
-    range.insertNode(wrapper);
-
+    // Insert reset span after the wrapper
     if (wrapper.nextSibling) {
       wrapper.parentNode.insertBefore(resetSpan, wrapper.nextSibling);
     } else {
       wrapper.parentNode.appendChild(resetSpan);
     }
 
+    // Position cursor at the zero-width space
     const newRange = document.createRange();
-    newRange.setStart(zwsp, 0);
+    newRange.setStart(zwsp, 1);
     newRange.collapse(true);
 
     selection.removeAllRanges();
     selection.addRange(newRange);
 
+    // Force style reset with removeFormat in next tick
+    setTimeout(() => {
+      if (document.getSelection()?.rangeCount > 0) {
+        // Save current selection
+        const currentRange = document.getSelection().getRangeAt(0);
+        
+        // Apply removeFormat to force style reset
+        document.execCommand('removeFormat', false, null);
+        
+        // Restore selection if it was lost
+        if (currentRange && currentRange.startContainer === zwsp) {
+          const restoreRange = document.createRange();
+          restoreRange.setStart(zwsp, 1);
+          restoreRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(restoreRange);
+        }
+      }
+    }, 0);
+
+    // Clean up empty reset spans after typing starts
+    const cleanupResetSpan = () => {
+      if (resetSpan.parentNode && resetSpan.textContent === '\u200B') {
+        // Check if cursor has moved away
+        const currentSelection = window.getSelection();
+        if (!currentSelection?.rangeCount || 
+            currentSelection.getRangeAt(0).startContainer !== zwsp) {
+          resetSpan.remove();
+        }
+      }
+    };
+
+    // Set up cleanup after a brief delay
+    setTimeout(cleanupResetSpan, 100);
+    
+    // Also clean up on next input
+    const handleNextInput = () => {
+      cleanupResetSpan();
+      editor.removeEventListener('input', handleNextInput, { once: true });
+    };
+    editor.addEventListener('input', handleNextInput, { once: true });
+
+    // Scroll the reset span into view
     resetSpan.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   };
 
@@ -310,10 +398,36 @@ export default function Editor({ onDataChange }) {
           e.preventDefault();
           handleFormat('underline');
           break;
+        case 'z':
+          if (e.shiftKey) {
+            // Ctrl+Shift+Z for redo
+            e.preventDefault();
+            handleRedo();
+          } else {
+            // Ctrl+Z for undo
+            e.preventDefault();
+            handleUndo();
+          }
+          break;
+        case 'y':
+          // Ctrl+Y for redo (alternative)
+          e.preventDefault();
+          handleRedo();
+          break;
         default:
           break;
       }
     }
+  };
+
+  const handleUndo = () => {
+    editorRef.current?.focus();
+    document.execCommand('undo', false, null);
+  };
+
+  const handleRedo = () => {
+    editorRef.current?.focus();
+    document.execCommand('redo', false, null);
   };
 
   return (
@@ -372,9 +486,11 @@ export default function Editor({ onDataChange }) {
         <Toolbar
           buttons={[
             [
-              { label: 'B', onClick: () => handleFormat('bold'), className: 'toolbar-btn toolbar-btn-bold', title: 'Bold (Ctrl+B)' },
-              { label: 'I', onClick: () => handleFormat('italic'), className: 'toolbar-btn toolbar-btn-italic', title: 'Italic (Ctrl+I)' },
-              { label: 'U', onClick: () => handleFormat('underline'), className: 'toolbar-btn toolbar-btn-underline', title: 'Underline (Ctrl+U)' },
+              { label: '↶', onClick: handleUndo, className: 'toolbar-btn toolbar-btn-undo', title: 'Undo (Ctrl+Z)' },
+              { label: '↷', onClick: handleRedo, className: 'toolbar-btn toolbar-btn-redo', title: 'Redo (Ctrl+Y)' },
+              { label: 'B', onClick: () => handleFormat('bold'), className: `toolbar-btn toolbar-btn-bold ${formatStates.bold ? 'toolbar-btn-active' : ''}`, title: 'Bold (Ctrl+B)' },
+              { label: 'I', onClick: () => handleFormat('italic'), className: `toolbar-btn toolbar-btn-italic ${formatStates.italic ? 'toolbar-btn-active' : ''}`, title: 'Italic (Ctrl+I)' },
+              { label: 'U', onClick: () => handleFormat('underline'), className: `toolbar-btn toolbar-btn-underline ${formatStates.underline ? 'toolbar-btn-active' : ''}`, title: 'Underline (Ctrl+U)' },
               { icon: { src: '/assets/icons/bullet-list.png', alt: 'Bullet List' }, onClick: handleUnorderedList, className: 'toolbar-btn toolbar-btn-icon toolbar-btn-bullet-list', title: 'Bullet List' },
               { icon: { src: '/assets/icons/numbered-list.png', alt: 'Numbered List' }, onClick: handleOrderedList, className: 'toolbar-btn toolbar-btn-icon toolbar-btn-numbered-list', title: 'Numbered List' },
               { icon: { src: '/assets/icons/quote.png', alt: 'Quote' }, onClick: handleQuote, className: 'toolbar-btn toolbar-btn-icon', title: 'Quote' },
