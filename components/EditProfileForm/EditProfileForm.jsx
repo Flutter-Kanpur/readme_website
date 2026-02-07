@@ -57,7 +57,9 @@ const handleSaveClick = async () => {
     // Upload new image if changed
     if (selectedFile) {
       const fileExt = selectedFile.name.split('.').pop()
-      const fileName = `${profile.id}.${fileExt}`
+      // const fileName = `${profile.id}.${fileExt}`
+      const fileName = `${profile.id}/${Date.now()}.${fileExt}`
+
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
@@ -89,9 +91,11 @@ const handleSaveClick = async () => {
     if (error) throw error
 
     alert('Profile updated successfully!')
+    window.location.reload()
   } catch (err) {
     console.error(err)
     alert('Error saving profile')
+    console.log(err)
   } finally {
     setLoading(false)
   }
