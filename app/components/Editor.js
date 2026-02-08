@@ -79,7 +79,6 @@ export default function Editor({ onDataChange }) {
     
     setTimeout(() => {
       setIsUndoRedoOperation(false);
-      checkFormatStates();
     }, 0);
   }, [undoStack, onDataChange]);
 
@@ -115,7 +114,6 @@ export default function Editor({ onDataChange }) {
     
     setTimeout(() => {
       setIsUndoRedoOperation(false);
-      checkFormatStates();
     }, 0);
   }, [redoStack, onDataChange]);
 
@@ -135,53 +133,65 @@ export default function Editor({ onDataChange }) {
       return () => clearTimeout(timeoutId);
     };
 
-    const handleSelectionChange = () => {
-      checkFormatStates();
+    // Handle input to apply formatting to new text
+    const handleInput = (e) => {
+      if (isUndoRedoOperation) return;
+      
+      // Apply formatting to newly typed text based on toggle states
+      setTimeout(() => {
+        if (formatStates.bold || formatStates.italic || formatStates.underline) {
+          const selection = window.getSelection();
+          if (selection && selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            
+            if (range.collapsed) {
+              // For future typing, apply the formatting commands to set the state
+              try {
+                if (formatStates.bold && !document.queryCommandState('bold')) {
+                  document.execCommand('bold', false, null);
+                }
+                if (formatStates.italic && !document.queryCommandState('italic')) {
+                  document.execCommand('italic', false, null);
+                }
+                if (formatStates.underline && !document.queryCommandState('underline')) {
+                  document.execCommand('underline', false, null);
+                }
+                
+                // Also handle turning off formatting when toggles are off
+                if (!formatStates.bold && document.queryCommandState('bold')) {
+                  document.execCommand('bold', false, null);
+                }
+                if (!formatStates.italic && document.queryCommandState('italic')) {
+                  document.execCommand('italic', false, null);
+                }
+                if (!formatStates.underline && document.queryCommandState('underline')) {
+                  document.execCommand('underline', false, null);
+                }
+              } catch (error) {
+                console.warn('Could not maintain formatting state:', error);
+              }
+            }
+          }
+        }
+      }, 0);
+      
+      handleChange();
     };
 
     const titleElement = titleRef.current;
     const editorElement = editorRef.current;
 
     titleElement?.addEventListener('input', handleChange);
-    editorElement?.addEventListener('input', handleChange);
-    editorElement?.addEventListener('keyup', handleSelectionChange);
-    editorElement?.addEventListener('mouseup', handleSelectionChange);
-    document.addEventListener('selectionchange', handleSelectionChange);
+    editorElement?.addEventListener('input', handleInput);
 
     // Save initial state
     saveState();
 
     return () => {
       titleElement?.removeEventListener('input', handleChange);
-      editorElement?.removeEventListener('input', handleChange);
-      editorElement?.removeEventListener('keyup', handleSelectionChange);
-      editorElement?.removeEventListener('mouseup', handleSelectionChange);
-      document.removeEventListener('selectionchange', handleSelectionChange);
+      editorElement?.removeEventListener('input', handleInput);
     };
-  }, [onDataChange, saveState, isUndoRedoOperation]);
-
-  const checkFormatStates = () => {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
-    const parentElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE 
-      ? range.commonAncestorContainer.parentElement 
-      : range.commonAncestorContainer;
-
-    const isBold = document.queryCommandState('bold') || 
-                   parentElement.closest('strong, b, [style*="font-weight: bold"]') !== null;
-    const isItalic = document.queryCommandState('italic') || 
-                     parentElement.closest('em, i, [style*="font-style: italic"]') !== null;
-    const isUnderline = document.queryCommandState('underline') || 
-                        parentElement.closest('u, [style*="text-decoration: underline"]') !== null;
-
-    setFormatStates({
-      bold: isBold,
-      italic: isItalic,
-      underline: isUnderline
-    });
-  };
+  }, [onDataChange, saveState, isUndoRedoOperation, formatStates]);
 
   const handleFormat = (command) => {
     const editor = editorRef.current;
@@ -189,23 +199,16 @@ export default function Editor({ onDataChange }) {
 
     editor.focus();
 
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
-    if (range.collapsed) {
-      alert('Select some text first');
-      return;
-    }
+    // Toggle the format state manually - this stays active until clicked again
+    const newState = !formatStates[command];
+    setFormatStates(prev => ({
+      ...prev,
+      [command]: newState
+    }));
 
     // Save state before making changes
     saveState();
 
-    // Save the selection for restoring later
-    const savedRange = range.cloneRange();
-    const selectedText = range.toString();
-
-    // Use document.execCommand for better undo/redo integration
     try {
       let execCommand;
       switch (command) {
@@ -221,82 +224,12 @@ export default function Editor({ onDataChange }) {
         default:
           return;
       }
-
-      // Execute the command - this will be properly tracked in the undo stack
+      
+      // Apply formatting using execCommand
       document.execCommand(execCommand, false, null);
-
-      // Ensure the cursor is positioned correctly and styles are updated
-      setTimeout(() => {
-        checkFormatStates();
-        
-        // Create a reset span for future typing if cursor is at the end
-        const currentSelection = window.getSelection();
-        if (currentSelection && currentSelection.rangeCount > 0) {
-          const currentRange = currentSelection.getRangeAt(0);
-          
-          // Only add reset span if we're at the end of formatted text
-          if (currentRange.collapsed) {
-            const resetSpan = document.createElement('span');
-            resetSpan.style.fontWeight = 'normal';
-            resetSpan.style.fontStyle = 'normal';
-            resetSpan.style.textDecoration = 'none';
-            resetSpan.style.fontSize = 'inherit';
-            resetSpan.style.color = 'inherit';
-            
-            const zwsp = document.createTextNode('\u200B');
-            resetSpan.appendChild(zwsp);
-            
-            try {
-              currentRange.insertNode(resetSpan);
-              
-              // Position cursor at the zero-width space
-              const newRange = document.createRange();
-              newRange.setStart(zwsp, 1);
-              newRange.collapse(true);
-              currentSelection.removeAllRanges();
-              currentSelection.addRange(newRange);
-              
-              // Clean up the reset span when user types
-              const cleanupHandler = () => {
-                if (resetSpan.parentNode && resetSpan.textContent === '\u200B') {
-                  resetSpan.remove();
-                }
-                editor.removeEventListener('input', cleanupHandler);
-              };
-              editor.addEventListener('input', cleanupHandler, { once: true });
-              
-            } catch (e) {
-              // If insertion fails, just continue
-              console.warn('Could not insert reset span:', e);
-            }
-          }
-        }
-      }, 0);
-
+      
     } catch (error) {
       console.error('Format command failed:', error);
-      // Fallback to the original manual method if execCommand fails
-      const fragment = savedRange.extractContents();
-      let wrapper;
-      if (command === 'bold') {
-        wrapper = document.createElement('strong');
-      } else if (command === 'italic') {
-        wrapper = document.createElement('em');
-      } else if (command === 'underline') {
-        wrapper = document.createElement('u');
-      }
-      
-      if (wrapper) {
-        wrapper.appendChild(fragment);
-        savedRange.insertNode(wrapper);
-        
-        // Position cursor after the wrapper
-        const newRange = document.createRange();
-        newRange.setStartAfter(wrapper);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-      }
     }
   };
 
@@ -310,9 +243,6 @@ export default function Editor({ onDataChange }) {
     editor.focus();
     // Use execCommand for better undo/redo integration
     document.execCommand('insertOrderedList', false, null);
-    
-    // Update format states after the operation
-    setTimeout(() => checkFormatStates(), 0);
   };
 
   const handleUnorderedList = () => {
@@ -325,9 +255,6 @@ export default function Editor({ onDataChange }) {
     editor.focus();
     // Use execCommand for better undo/redo integration
     document.execCommand('insertUnorderedList', false, null);
-    
-    // Update format states after the operation
-    setTimeout(() => checkFormatStates(), 0);
   };
 
   const handleQuote = () => {
