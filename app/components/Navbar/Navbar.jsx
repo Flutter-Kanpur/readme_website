@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { supabase } from "@/app/lib/supabase";
 import { useRouter } from "next/navigation";
+import { getProfileById } from "@/app/lib/supabase/queries";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", active: true },
@@ -15,7 +16,7 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
-
+  
   useEffect(() => {
     // Initial session check
     supabase.auth.getUser().then(({ data }) => {
@@ -28,6 +29,8 @@ export default function Navbar() {
         setUser(session?.user ?? null);
       },
     );
+
+    // const profileData = await getProfileById(user.id)
 
     return () => {
       authListener.subscription.unsubscribe();
@@ -96,7 +99,7 @@ function UserAvatar({ user }) {
   return (
     <div className="flex items-center gap-3 cursor-pointer">
       <Image
-        src={user.user_metadata?.avatar_url || "/avatar.jpg"}
+        src={user.avatar_url?.user_metadata || "/avatar.jpg"}
         alt="User avatar"
         width={36}
         height={36}

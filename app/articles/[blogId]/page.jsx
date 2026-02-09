@@ -46,13 +46,13 @@ export default function ArticlePage() {
                 setAuthor(authorData)
 
                 if (blogData.author_id) {
-          const related = await getRelatedArticlesByAuthorId(
-            // authorData.id,
-            blogData.author_id,
-            blogData.blog_id
-          )
-          setRelatedArticles(related || [])
-        }
+                    const related = await getRelatedArticlesByAuthorId(
+                        // authorData.id,
+                        blogData.author_id,
+                        blogData.blog_id
+                    )
+                    setRelatedArticles(related || [])
+                }
             } catch (err) {
                 console.error('Error loading page:', err)
             } finally {
@@ -76,12 +76,12 @@ export default function ArticlePage() {
     if (!blog) return <p className="error">Blog not found or unpublished</p>
 
     return (
-        <div>
+        <div className='page'>
             <Navbar />
             <div className="article-container">
 
                 <main className="article-main">
-                    <ArticleCardAuthorInfo author={author} createdAt={blog.created_at} handleAuthorProfile={handleAuthorProfile}/>
+                    <ArticleCardAuthorInfo author={author} createdAt={blog.created_at} handleAuthorProfile={handleAuthorProfile} />
 
                     {blog.title && (
                         <h1 className="article-title">
@@ -89,7 +89,7 @@ export default function ArticlePage() {
                         </h1>
                     )}
 
-                    
+
                     {blog.cover_image && (
                         <Image
                             src={blog.cover_image}
@@ -121,20 +121,22 @@ export default function ArticlePage() {
                                 bio: author.bio,
                                 avatar: author.avatar_url || "/avatar.jpg"
                             }}
-                            // onFollow={handleAuthRedirect}
+                        // onFollow={handleAuthRedirect}
                         />
                     )}
 
-                    <RelatedArticles articles={relatedArticles}/>
+                    <RelatedArticles articles={relatedArticles} />
 
                     <WeeklyRead
                         text="Get the best design and development articles delivered to your inbox."
-                        // onSubscribe={handleAuthRedirect}
+                    // onSubscribe={handleAuthRedirect}
                     />
                 </aside>
 
             </div>
-            <Footer />
+            <div style={{ position: 'absolute', bottom: 0,  width: '100%'  }}>
+                <Footer />
+            </div>
         </div>
     )
 }
