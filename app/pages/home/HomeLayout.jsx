@@ -9,7 +9,9 @@ export default function HomeLayout() {
       <Navbar />
       <Hero />
       <SearchBar />
-      <ArticlesSection />
+      <section id="latest-articles">
+        <ArticlesSection />
+      </section>
       <Footer/>
     </main>
   );

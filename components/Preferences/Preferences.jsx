@@ -1,42 +1,44 @@
-"use Client"
+'use client'
 import './styles.css'
 import { useState } from 'react'
 import { supabase } from '@/app/lib/supabase/index'
 
-export default function PreferencesCard({profile}) {
+export default function PreferencesCard({ profile }) {
 
   const [loading, setLoading] = useState(false)
   const handleDeactivate = async () => {
-    if (!confirm('Are you sure? This will permanently delete your account and all data.')) {
+    if (!confirm('Deactivate your account?')) return
+
+    setLoading(true)
+    const { data: { user }, error: authError } =
+      await supabase.auth.getUser();
+
+    if (authError || !user) {
+      alert('Not authenticated');
+      setLoading(false);
+      return;
+    }
+
+    console.log('AUTH USER ID:', user.id);
+    console.log('PROFILE PROP ID:', profile?.id);
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ is_active: false })
+      .eq('id', user.id)
+      .select();
+
+    console.log('UPDATE RESULT:', data, error);
+
+    if (error) {
+      alert(error.message)
       return
     }
-
-    try {
-      setLoading(true)
-
-      // 1. Delete profile row first
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', profile.id)
-
-      if (profileError) throw profileError
-
-      // 2. Sign out user (this deletes their auth.users session)
-      const { error: signoutError } = await supabase.auth.signOut()
-
-      if (signoutError) throw signoutError
-
-      // 3. Redirect to home (or wherever)
-      window.location.href = '/'
-
-    } catch (error) {
-      console.error('Delete failed:', error)
-      alert('Failed to delete account: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
+    setLoading(false)
+    await supabase.auth.signOut()
+    window.location.href = '/'
   }
+
 
   return (
     <div className="preferences-card">
@@ -55,7 +57,9 @@ export default function PreferencesCard({profile}) {
         <label><input type="checkbox" defaultChecked /> Show reading statistics</label>
       </div>
 
-      <button className="deactivate" onClick={handleDeactivate}>Deactivate account</button>
+      <button className="deactivate"
+        onClick={handleDeactivate}
+      >Deactivate account</button>
     </div>
   )
 }

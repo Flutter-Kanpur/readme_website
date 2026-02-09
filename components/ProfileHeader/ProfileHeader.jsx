@@ -5,7 +5,7 @@ export default function ProfileHeader({ profile }) {
   return (
     <div className={styles.wrapper}>
       <Image
-          src={profile.avatar_url}
+          src={profile.avatar_url || '/avatar.jpg'}
           alt="avatar"
           width={96}
           height={96}

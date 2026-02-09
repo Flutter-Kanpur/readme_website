@@ -6,7 +6,7 @@ export default function ArticleCardAuthorInfo({author, createdAt, handleAuthorPr
     return (
         <div className='wrapper'>
             <Image
-                src={author.avatar_url}
+                src={author.avatar_url || '/avatar.jpg'}
                 alt="avatar"
                 width={16}
                 height={16}

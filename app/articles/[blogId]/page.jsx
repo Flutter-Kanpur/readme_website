@@ -64,9 +64,9 @@ export default function ArticlePage() {
     }, [params.blogId])
 
     // Always redirect to login
-    function handleAuthRedirect() {
-        router.push('/login')
-    }
+    // function handleAuthRedirect() {
+    //     router.push('/login')
+    // }
 
     function handleAuthorProfile() {
         router.push(`/profile/${author.authorId}`);
@@ -119,9 +119,9 @@ export default function ArticlePage() {
                             author={{
                                 name: author.name,
                                 bio: author.bio,
-                                avatar: author.avatar_url
+                                avatar: author.avatar_url || "/avatar.jpg"
                             }}
-                            onFollow={handleAuthRedirect}
+                            // onFollow={handleAuthRedirect}
                         />
                     )}
 
@@ -129,7 +129,7 @@ export default function ArticlePage() {
 
                     <WeeklyRead
                         text="Get the best design and development articles delivered to your inbox."
-                        onSubscribe={handleAuthRedirect}
+                        // onSubscribe={handleAuthRedirect}
                     />
                 </aside>
 

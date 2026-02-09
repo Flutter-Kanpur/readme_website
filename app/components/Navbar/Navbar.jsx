@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { supabase } from "@/app/lib/supabase";
+import { useRouter } from "next/navigation";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", active: true },
-  { label: "Articles", href: "/articles" },
+  { label: "Articles", href: "/#latest-articles" },
   { label: "Trending", href: "/trending" },
   // { label: "Profile", href: "/profile" },
 ];
@@ -91,6 +92,7 @@ export default function Navbar() {
 }
 
 function UserAvatar({ user }) {
+  const router = useRouter();
   return (
     <div className="flex items-center gap-3 cursor-pointer">
       <Image
@@ -102,8 +104,14 @@ function UserAvatar({ user }) {
       />
 
       <button
-        onClick={() => supabase.auth.signOut()}
-        className="bg-black text-white px-4 py-2 rounded-full text-sm"
+        // onClick={() => supabase.auth.signOut()}
+        // onClick= {handleLogout}
+        onClick={async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }}
+        className="bg-black text-white px-4 py-2 rounded-full text-sm cursor-pointer"
       >
         Logout
       </button>
