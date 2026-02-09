@@ -3,10 +3,28 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    domains: [
-      'i.pravatar.cc','images.unsplash.com','lh3.googleusercontent.com','uktnmjykbyuvfsbtawwg.supabase.co'
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.pravatar.cc',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'uktnmjykbyuvfsbtawwg.supabase.co',
+      },
       // If you also use Supabase Storage, add:
-      // 'YOUR_PROJECT_ID.supabase.co'
+      // {
+      //   protocol: 'https',
+      //   hostname: 'YOUR_PROJECT_ID.supabase.co',
+      // },
     ]
   }
 };
