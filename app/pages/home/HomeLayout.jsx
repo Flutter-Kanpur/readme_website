@@ -1,8 +1,8 @@
 import Navbar from "../../components/Navbar/Navbar";
-import Hero from "../../components/homepageComponents/Hero";
+import Hero from "../../components/HomepageComponents/Hero";
 import SearchBar from "../../components/HomepageComponents/SearchBar";
 import Footer from "../../components/Footer/Footer";
-import ArticlesSection from "../../components/homepageComponents/ArticleSection";
+import ArticlesSection from "../../components/HomepageComponents/ArticleSection";
 export default function HomeLayout() {
   return (
     <main className="grid-background min-h-screen">

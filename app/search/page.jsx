@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import ArticleCard from "../components/homepageComponents/ArticleCard";
+import ArticleCard from "../components/HomepageComponents/ArticleCard";
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
