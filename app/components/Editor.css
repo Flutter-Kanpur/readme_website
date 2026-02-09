@@ -178,16 +178,25 @@
 .editor-content img {
   max-width: 100%;
   height: auto;
+  display: block;
+  margin: 10px 0;
 }
 
 .editor-image-wrapper {
   position: relative;
-  display: inline-block;
+  display: block;
   max-width: 100%;
+  margin: 10px 0;
 }
 
 .editor-image-wrapper:hover {
   border-color: #3b82f6 !important;
+}
+
+/* Ensure proper spacing after images */
+.editor-image-wrapper + div,
+.editor-image-wrapper + br + div {
+  margin-top: 10px;
 }
 
 .editor-image-delete {
