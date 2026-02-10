@@ -16,11 +16,6 @@ const HERO_CONTENT = {
       href: "/write",
       primary: true,
     },
-    {
-      label: "Explore Topics →",
-      href: "/#latest-articles",
-      primary: false,
-    },
   ],
 };
 
@@ -39,7 +34,7 @@ export default function Hero() {
         {HERO_CONTENT.description}
       </p>
 
-      <div className="mt-10 flex gap-4">
+      <div className="mt-10 flex gap-3">
         {HERO_CONTENT.actions.map((action) => (
           <Link key={action.href} href={action.href}>
             <button
