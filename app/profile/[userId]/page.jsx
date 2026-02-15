@@ -13,6 +13,7 @@ import {
 import { supabase } from '@/app/lib/supabase/index'
 import CustomButton from '@/components/Button/CustomButton'
 import Footer from '@/components/Footer/Footer'
+// import Footer from "../../components/Footer/Footer";
 import './styles.css'
 
 export default function ProfilePage() {
@@ -97,7 +98,6 @@ export default function ProfilePage() {
   return (
     <div className="page">
       <Navbar />
-
       <div className="container">
         <div className="profileheader">
           <ProfileHeader profile={profile} />
@@ -131,8 +131,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-
-      <Footer />
+     <div style={{ position: 'absolute',  bottom: 0, width:'100%'}}><Footer/></div>
     </div>
   )
 }
