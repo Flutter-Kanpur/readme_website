@@ -3,10 +3,7 @@ import styles from "@/styles/auth.module.css";
 
 export default function AuthLayout({ children }) {
   return (
-    <div className={styles.page}>
-      <GridBackground />
-
-    
+    <div className={`${styles.page} grid-background`}>
       <main className={styles.card} style={{ position: "relative", zIndex: 1 }}>
         <div className={styles.twoCol}>{children}</div>
       </main>

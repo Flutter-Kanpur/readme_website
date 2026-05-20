@@ -8,8 +8,8 @@ export default function ArticleCardAuthorInfo({author, createdAt, handleAuthorPr
             <Image
                 src={author.avatar_url || '/avatar.jpg'}
                 alt="avatar"
-                width={16}
-                height={16}
+                width={48}
+                height={48}
                 className='avatar'
                 onClick={handleAuthorProfile}
             />

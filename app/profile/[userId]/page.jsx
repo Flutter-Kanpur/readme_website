@@ -1,5 +1,6 @@
 'use client'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Navbar from '@/app/components/Navbar/Navbar'
 import ProfileHeader from '@/components/ProfileHeader/ProfileHeader'
 import UserStats from '@/components/UserStats/UserStats'
@@ -81,8 +82,31 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <h2>Loading profile...</h2>
+      <div className="page grid-background">
+        <Navbar />
+        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+          <div className="profileSection">
+            <div className="flex items-center gap-8 mb-10">
+              <div className="w-40 h-40 rounded-full shimmer bg-gray-200"></div>
+              <div className="flex-1 space-y-4">
+                <div className="h-10 w-64 shimmer bg-gray-200 rounded-lg"></div>
+                <div className="h-6 w-full max-w-md shimmer bg-gray-200 rounded-lg"></div>
+                <div className="h-6 w-full max-w-sm shimmer bg-gray-200 rounded-lg"></div>
+              </div>
+            </div>
+          </div>
+          <div className="blogsarea">
+            <div className="flex-1 space-y-8">
+              <div className="h-8 w-40 shimmer bg-gray-200 rounded-lg mb-6"></div>
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-48 w-full shimmer bg-gray-200 rounded-2xl"></div>
+              ))}
+            </div>
+            <div className="sidebar">
+              <div className="h-64 w-full shimmer bg-gray-200 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -96,14 +120,14 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="page">
+    <div className="page grid-background">
       <Navbar />
-      <div className="container">
-        <div className="profileheader">
+      <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="profileSection">
           <ProfileHeader profile={profile} />
-          <div>
+          <div className="profileActions">
             {loggedInUser && loggedInUser.id === profile.id && (
-              <CustomButton handleClick={handleClick}>
+              <CustomButton handleClick={handleClick} variant="secondary">
                 Edit Profile
               </CustomButton>
             )}
@@ -120,7 +144,30 @@ export default function ProfilePage() {
               )}
 
               {blogs.map(blog => (
-                <ArticleCard key={blog.blog_id} blog={blog} />
+                <div key={blog.blog_id} style={{ position: 'relative' }}>
+                  <ArticleCard blog={blog} />
+                  {loggedInUser && loggedInUser.id === profile.id && (
+                    <Link 
+                      href={`/edit/${blog.blog_id}`}
+                      style={{ 
+                        position: 'absolute', 
+                        top: 24, 
+                        right: 24, 
+                        background: '#111827', 
+                        color: '#fff', 
+                        padding: '6px 14px', 
+                        borderRadius: '20px', 
+                        textDecoration: 'none', 
+                        fontSize: '12px', 
+                        fontWeight: 'bold',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        zIndex: 10
+                      }}
+                    >
+                      Edit Blog
+                    </Link>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -131,7 +178,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-     <div style={{ position: 'absolute',  bottom: 0, width:'100%'}}><Footer/></div>
+      <Footer />
     </div>
   )
 }

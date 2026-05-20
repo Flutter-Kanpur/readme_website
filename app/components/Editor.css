@@ -227,7 +227,7 @@
 }
 
 .editor-image-wrapper:hover .editor-image-delete {
-  opacity: 1;
+  opacity: 1 !important;
 }
 
 .editor-content blockquote {

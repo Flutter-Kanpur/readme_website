@@ -1,79 +1,90 @@
 /* Page Wrapper */
 .page {
   min-height: 100vh;
-  background: #f9fafb;
   position: relative;
 }
 
 /* Main Content Container */
 .container {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 48px 24px;
+}
+
+.profileSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 40px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.profileActions {
+  margin-top: 10px;
 }
 
 /* Blog + Sidebar Layout */
 .blogsarea {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 32px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 64px;
+  margin-top: 48px;
 }
 
 /* Articles Section */
 .articles {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 32px;
 }
 
 /* Sidebar */
 .sidebar {
-  min-width: 280px;
+  position: sticky;
+  top: 100px;
 }
 
 /* Section Title */
 .sectionTitle {
-  font-size: 22px;
-  margin-bottom: 16px;
-  color: #000;
-}
-
-/* Empty State */
-.empty {
-  color: #6b7280;
   font-size: 14px;
-}
-
-.profileheader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 32px;
+  color: #6b7280;
 }
 
 @media (max-width: 768px) {
   .container {
-    padding: 12px;
+    padding: 24px 16px;
+  }
+
+  .profileSection {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
   }
 
   .blogsarea {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .profileheader {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    gap: 40px;
+    margin-top: 32px;
   }
 
   .sectionTitle {
-    font-size: 18px;
-    text-align: center;
+    font-size: 12px;
+    text-align: left;
+    margin-bottom: 24px;
+  }
+
+  .sidebar {
+    position: static;
+    width: 100%;
   }
 
   .articles {
-    gap: 12px;
+    gap: 20px;
   }
 }

@@ -1,12 +1,19 @@
 .card {
   background: #fff;
-  padding: 20px;
-  border-radius: 12px;
+  padding: 32px;
+  border-radius: 16px;
   display: flex;
   justify-content: space-between;
-  gap: 20px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  gap: 32px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
   overflow: hidden;
+}
+
+.card:hover {
+  border-color: #d1d5db;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 }
 
 .title {
@@ -46,7 +53,7 @@
   width: 160px;
   height: 200px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 20px;
 }
 
 .content {

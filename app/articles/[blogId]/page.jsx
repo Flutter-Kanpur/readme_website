@@ -76,9 +76,9 @@ export default function ArticlePage() {
     if (!blog) return <p className="error">Blog not found or unpublished</p>
 
     return (
-        <div className='page'>
+        <div className='page grid-background'>
             <Navbar />
-            <div className="article-container">
+            <div className="article-container" style={{ position: 'relative', zIndex: 1 }}>
 
                 <main className="article-main">
                     <ArticleCardAuthorInfo author={author} createdAt={blog.created_at} handleAuthorProfile={handleAuthorProfile} />
@@ -94,9 +94,10 @@ export default function ArticlePage() {
                         <Image
                             src={blog.cover_image}
                             alt={blog.title || 'Blog cover'}
-                            width={400}
-                            height={200}
+                            width={1200}
+                            height={600}
                             className="article-cover"
+                            priority
                         />
                     )}
 
@@ -109,8 +110,6 @@ export default function ArticlePage() {
                         />
                     )}
 
-                    <ProTip text={blog.pro_tip || "No Pro Tip!! WORK HARD"} />
-
                 </main>
 
                 <aside className="article-sidebar">
@@ -119,7 +118,8 @@ export default function ArticlePage() {
                             author={{
                                 name: author.name,
                                 bio: author.bio,
-                                avatar: author.avatar_url || "/avatar.jpg"
+                                avatar: author.avatar_url || "/avatar.jpg",
+                                headline: author.headline
                             }}
                         // onFollow={handleAuthRedirect}
                         />
@@ -134,9 +134,7 @@ export default function ArticlePage() {
                 </aside>
 
             </div>
-            <div style={{ position: 'absolute', bottom: 0,  width: '100%'  }}>
-                <Footer />
-            </div>
+            <Footer />
         </div>
     )
 }

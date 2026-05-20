@@ -5,10 +5,21 @@ import Toolbar from "./Toolbar";
 import Icon from './Icon';
 import './Editor.css';
 
-export default function Editor({ onDataChange }) {
+export default function Editor({ onDataChange, initialData }) {
   const editorRef = useRef(null);
   const titleRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (initialData) {
+      if (titleRef.current) titleRef.current.value = initialData.title || '';
+      if (editorRef.current) {
+        editorRef.current.innerHTML = initialData.content || '';
+        const isEmpty = editorRef.current.textContent.trim() === '';
+        editorRef.current.setAttribute('data-empty', isEmpty);
+      }
+    }
+  }, [initialData]);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [savedSelection, setSavedSelection] = useState(null);
@@ -531,6 +542,24 @@ export default function Editor({ onDataChange }) {
   };
 
   const handleEditorClick = (e) => {
+    const deleteBtn = e.target.closest('.editor-image-delete');
+    if (deleteBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (confirm('Are you sure you want to delete this image?')) {
+        const wrapper = deleteBtn.closest('.editor-image-wrapper');
+        if (wrapper) {
+          saveState();
+          wrapper.remove();
+          const title = titleRef.current?.value || '';
+          const content = editorRef.current?.innerHTML || '';
+          onDataChange?.({ title, content });
+          editorRef.current?.focus();
+        }
+      }
+      return;
+    }
+
     const target = e.target.closest('a');
     if (target && target.href) {
       e.preventDefault();

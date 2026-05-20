@@ -54,7 +54,7 @@ export async function getAuthorByBlogId(blogId) {
   // Get profile
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, name, avatar_url')
+    .select('id, name, avatar_url, headline, bio')
     .eq('id', blog.author_id)
     .maybeSingle()
 
@@ -66,7 +66,9 @@ export async function getAuthorByBlogId(blogId) {
   return {
     authorId: profile.id,
     name: profile.name,
-    avatar_url: profile.avatar_url
+    avatar_url: profile.avatar_url,
+    headline: profile.headline,
+    bio: profile.bio
   }
 }
 

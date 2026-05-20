@@ -110,37 +110,45 @@ export default function DraftsPage() {
 
   if (loading) {
     return (
-      <div className="drafts-page">
+      <div className="drafts-page grid-background">
         <Navbar />
         <div className="drafts-container">
-          <div className="drafts-loading">Loading your drafts...</div>
+          <div className="drafts-header">
+            <div className="h-10 w-48 shimmer bg-gray-200 rounded-lg"></div>
+            <div className="h-10 w-32 shimmer bg-gray-200 rounded-full"></div>
+          </div>
+          <div className="drafts-loading-skeleton">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="skeleton-card shimmer bg-gray-100"></div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="drafts-page">
+    <div className="drafts-page grid-background">
       <Navbar />
-      <div className="drafts-container">
+      <div className="drafts-container" style={{ position: 'relative', zIndex: 1 }}>
         <div className="drafts-header">
           <h1>My Drafts</h1>
           <button 
             onClick={() => router.push('/write')}
             className="new-draft-btn"
           >
-            + New Draft
+            <span>+</span> New Draft
           </button>
         </div>
 
         {drafts.length === 0 ? (
           <div className="no-drafts">
-            <p>No drafts found.</p>
+            <p>You haven&apos;t started any stories yet.</p>
             <button 
               onClick={() => router.push('/write')}
               className="write-first-draft-btn"
             >
-              Write Your First Draft
+              Write Your First Story
             </button>
           </div>
         ) : (
@@ -155,18 +163,18 @@ export default function DraftsPage() {
                     {truncateContent(draft.content || '')}
                   </p>
                   <div className="draft-meta">
-                    <span className="draft-date">
-                      Last edited: {formatDate(draft.created_at)}
-                    </span>
                     <span className="draft-category">
-                      {draft.category}
+                      {draft.category || 'Uncategorized'}
+                    </span>
+                    <span className="draft-date">
+                      Edited {formatDate(draft.created_at)}
                     </span>
                   </div>
                 </div>
                 <div className="draft-actions">
                   <button
                     onClick={() => handleEditDraft(draft.blog_id)}
-                    className="draft-btn draft-edit-btn"
+                    className="draft-btn"
                   >
                     Edit
                   </button>

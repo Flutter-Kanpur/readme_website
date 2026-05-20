@@ -10,7 +10,7 @@ import { supabase } from '@/app/lib/supabase/index'
 export default function EditProfileForm({ profile }) {
   const [preview, setPreview] = useState(null)
   const [name, setName] = useState(profile.name || '')
-  // const [headline, setHeadline] = useState(profile.headline || '')
+  const [headline, setHeadline] = useState(profile.headline || '')
   const [bio, setBio] = useState(profile.bio || '')
   const [selectedFile, setSelectedFile] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -83,6 +83,7 @@ const handleSaveClick = async () => {
       .from('profiles')
       .update({
         name,
+        headline,
         bio,
         avatar_url: avatarUrl
       })
@@ -93,9 +94,8 @@ const handleSaveClick = async () => {
     alert('Profile updated successfully!')
     window.location.reload()
   } catch (err) {
-    console.error(err)
-    alert('Error saving profile')
-    console.log(err)
+    console.error('Full Error Object:', err)
+    alert(`Error saving profile: ${err.message || 'Unknown error'}`)
   } finally {
     setLoading(false)
   }
@@ -107,7 +107,7 @@ const handleSaveClick = async () => {
       {/* Avatar */}
       <div className={styles.avatarSection}>
         <Image
-          src={preview || profile.avatar_url || avatar.png}
+          src={preview || profile.avatar_url || '/avatar.jpg'}
           alt="Profile"
           className={styles.avatar}
           width={80}

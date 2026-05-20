@@ -24,8 +24,16 @@
 
 .input {
   width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #e5e5e5;
-  font-size: 14px;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 15px;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #000;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.05);
 }

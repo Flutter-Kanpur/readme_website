@@ -16,9 +16,9 @@ const FILTERS = [
   { label: "Flutter", value: "flutter" },
 ];
 
-export default function ArticlesSection() {
+export default function ArticlesSection({ initialBlogs }) {
   const [activeFilter, setActiveFilter] = useState("for_you");
-  const { blogs, loading } = useArticlesData(activeFilter);
+  const { blogs, loading } = useArticlesData(activeFilter, initialBlogs);
 
   return (
     <section className="max-w-7xl mx-auto py-16 px-4">
@@ -28,7 +28,7 @@ export default function ArticlesSection() {
         onChange={setActiveFilter}
       />
 
-      <div className="space-y-10 mt-10">
+      <div className="space-y-6 mt-10">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <ArticleCard key={i} />

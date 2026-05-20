@@ -14,14 +14,25 @@
 .name{
   margin: 0;
   color: #000;
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.headline {
+  font-size: 18px;
+  color: #4b5563;
+  margin: 8px 0 16px 0;
+  font-weight: 500;
+  line-height: 1.4;
+  max-width: 600px;
 }
 
 .bio{
-  /* margin-top: 6px; */
-  max-width: 500px;
-  color: #1f2937;
+  max-width: 600px;
+  color: #374151;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 .stats{
@@ -34,4 +45,29 @@
 
 .statsdata{
   color: #000;
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .name {
+    font-size: 28px;
+    line-height: 1.2;
+  }
+
+  .headline, .bio {
+    font-size: 14px;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
 }

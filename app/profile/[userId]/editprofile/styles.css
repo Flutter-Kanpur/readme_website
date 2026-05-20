@@ -12,7 +12,14 @@
 }
 
 @media (max-width: 900px) {
+  .edit-profile-page {
+    padding: 24px 16px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
   .edit-profile-layout {
     grid-template-columns: 1fr;
+    gap: 32px;
   }
 }

@@ -9,21 +9,21 @@ export default function AuthorCard({ author, onFollow }) {
 
   return (
     <div className="author-card">
-      {author.avatar && (
-        <Image
-          src={author.avatar}
-          alt={author.name || 'Author avatar'}
-          width={80}
-          height={80}
-          className="author-avatar"
-        />
-      )}
-
-      {author.name && (
-        <h3 className="author-name">
-          {author.name}
-        </h3>
-      )}
+      <div className="author-header">
+        {author.avatar && (
+          <Image
+            src={author.avatar}
+            alt={author.name || 'Author avatar'}
+            width={64}
+            height={64}
+            className="author-avatar"
+          />
+        )}
+        <div className="author-info">
+          {author.name && <h3 className="author-name">{author.name}</h3>}
+          {author.headline && <p className="author-headline">{author.headline}</p>}
+        </div>
+      </div>
 
       {author.bio && (
         <p className="author-bio">
@@ -31,18 +31,9 @@ export default function AuthorCard({ author, onFollow }) {
         </p>
       )}
 
-      <CustomButton handleClick={onFollow} styles={{
-        width: "100%",
-        backgroundColor: "#000000",
-        color: "#ffffff",
-        padding: "8px 16px",
-        borderRadius: "9999px",
-        fontSize: "14px",
-        cursor: "pointer",
-      }}>
+      <CustomButton handleClick={onFollow} variant="primary" styles={{ width: '100%', marginTop: 'auto' }}>
         Follow Author
       </CustomButton>
-
     </div>
   )
 }

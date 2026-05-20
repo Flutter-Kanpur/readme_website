@@ -4,11 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import Icon from './Icon';
 import './ArticleSettings.css';
 
-export default function ArticleSettings({ onDataChange }) {
-  const [category, setCategory] = useState('Technology');
-  const [tags, setTags] = useState(['JavaScript', 'Web Development']);
+export default function ArticleSettings({ onDataChange, initialData }) {
+  const [category, setCategory] = useState(initialData?.category || 'Technology');
+  const [tags, setTags] = useState(initialData?.tags || ['JavaScript', 'Web Development']);
   const [tagInput, setTagInput] = useState('');
-  const [featuredImage, setFeaturedImage] = useState(null);
+  const [featuredImage, setFeaturedImage] = useState(initialData?.coverImage || null);
   const imageInputRef = useRef(null);
 
   useEffect(() => {onDataChange?.({   category,   tags,  coverImage: featuredImage 

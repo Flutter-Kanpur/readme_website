@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { getLatestArticle } from "../lib/supabase/queries";
 
-export function useArticlesData(activeFilter) {
-  const [blogs, setBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+export function useArticlesData(activeFilter, initialData = []) {
+  const [blogs, setBlogs] = useState(initialData);
+  const [loading, setLoading] = useState(initialData.length === 0);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Skip initial fetch if we already have data for the default filter
+    if (activeFilter === "for_you" && initialData.length > 0 && blogs === initialData) {
+        setLoading(false);
+        return;
+    }
+
     async function fetchArticles() {
       setLoading(true);
       try {
