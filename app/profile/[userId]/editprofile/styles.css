@@ -1,3 +1,8 @@
+.page {
+  min-height: 100vh;
+  background: #fff;
+}
+
 .edit-profile-page {
   max-width: 1100px;
   margin: 0 auto;

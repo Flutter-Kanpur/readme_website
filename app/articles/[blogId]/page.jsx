@@ -72,16 +72,37 @@ export default function ArticlePage() {
         router.push(`/profile/${author.authorId}`);
     }
 
-    if (loading) return <p className="loading">Loading...</p>
-    if (!blog) return <p className="error">Blog not found or unpublished</p>
+    if (loading) {
+        return (
+            <div className="article-page">
+                <Navbar />
+                <p className="loading">Loading...</p>
+            </div>
+        )
+    }
+
+    if (!blog) {
+        return (
+            <div className="article-page">
+                <Navbar />
+                <p className="error">Blog not found or unpublished</p>
+            </div>
+        )
+    }
 
     return (
-        <div className='page grid-background'>
+        <div className="article-page">
             <Navbar />
-            <div className="article-container" style={{ position: 'relative', zIndex: 1 }}>
+            <div className="article-container">
 
                 <main className="article-main">
-                    <ArticleCardAuthorInfo author={author} createdAt={blog.created_at} handleAuthorProfile={handleAuthorProfile} />
+                    {author && (
+                        <ArticleCardAuthorInfo
+                            author={author}
+                            createdAt={blog.created_at}
+                            handleAuthorProfile={handleAuthorProfile}
+                        />
+                    )}
 
                     {blog.title && (
                         <h1 className="article-title">

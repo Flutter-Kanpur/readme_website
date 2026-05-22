@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import Editor from "../components/Editor";
 import ArticleSettings from "../components/ArticleSettings";
 import Navbar from '../components/Navbar/Navbar';
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/app/lib/supabase";
 import './write.css';
 
 export default function WritePage() {
@@ -12,7 +12,16 @@ export default function WritePage() {
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState('');
-  
+  // Track the blog row id once we've inserted it. Subsequent Save / Publish
+  // clicks UPDATE this row instead of inserting a new one — that's what
+  // prevents duplicate draft entries when the user clicks Save Draft twice.
+  const [draftId, setDraftId] = useState(null);
+
+  // Combined "in-flight" flag — used to disable BOTH buttons during any
+  // async write, so the user can't Publish while a Save Draft is pending
+  // (and vice versa).
+  const busy = saving || publishing;
+
   const editorDataRef = useRef({
     title: '',
     content: '',
@@ -25,7 +34,58 @@ export default function WritePage() {
     editorDataRef.current = { ...editorDataRef.current, ...data };
   };
 
+  // Shared write helper — INSERTs the first time, UPDATEs every time after.
+  // Returns true on success so callers can drive their own UI feedback.
+  const persistBlog = async ({ isPublished }) => {
+    const { title, content, category, coverImage, tags } = editorDataRef.current;
+
+    if (!title.trim()) {
+      setMessage('Please add a title');
+      return false;
+    }
+
+    if (isPublished && !content.trim()) {
+      setMessage('Please add some content');
+      return false;
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      setMessage('You must be logged in');
+      return false;
+    }
+
+    const payload = {
+      title: title.trim(),
+      content,
+      category,
+      tags,
+      cover_image: coverImage,
+      is_published: isPublished,
+    };
+
+    if (draftId) {
+      const { error } = await supabase
+        .from('blogs')
+        .update(payload)
+        .eq('blog_id', draftId)
+        .eq('author_id', user.id);
+      if (error) throw error;
+    } else {
+      const { data, error } = await supabase
+        .from('blogs')
+        .insert([{ ...payload, author_id: user.id }])
+        .select('blog_id')
+        .single();
+      if (error) throw error;
+      setDraftId(data.blog_id);
+    }
+
+    return true;
+  };
+
   const handleSaveDraft = async () => {
+    if (busy) return;
     if (!isAuthenticated) {
       setMessage('You must be authenticated to save drafts');
       return;
@@ -35,40 +95,11 @@ export default function WritePage() {
     setMessage('');
 
     try {
-      const { title, content, category, coverImage } = editorDataRef.current;
-
-      if (!title.trim()) {
-        setMessage('Please add a title');
-        setSaving(false);
-        return;
+      const ok = await persistBlog({ isPublished: false });
+      if (ok) {
+        setMessage('Draft saved successfully!');
+        setTimeout(() => setMessage(''), 3000);
       }
-
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        setMessage('You must be logged in to save drafts');
-        setSaving(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('blogs')
-        .insert([
-          {
-            title: title.trim(),
-            content: content,
-            category: category,
-            cover_image: coverImage,
-            is_published: false,
-            author_id: user.id
-          }
-        ])
-        .select();
-
-      if (error) throw error;
-
-      setMessage('Draft saved successfully!');
-      setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error('Error saving draft:', error);
       setMessage('Error saving draft: ' + error.message);
@@ -78,6 +109,7 @@ export default function WritePage() {
   };
 
   const handlePublish = async () => {
+    if (busy) return;
     if (!isAuthenticated) {
       setMessage('You must be authenticated to publish');
       return;
@@ -87,46 +119,11 @@ export default function WritePage() {
     setMessage('');
 
     try {
-      const { title, content, category, coverImage } = editorDataRef.current;
-
-      if (!title.trim()) {
-        setMessage('Please add a title');
-        setPublishing(false);
-        return;
+      const ok = await persistBlog({ isPublished: true });
+      if (ok) {
+        setMessage('Published successfully!');
+        setTimeout(() => setMessage(''), 3000);
       }
-
-      if (!content.trim()) {
-        setMessage('Please add some content');
-        setPublishing(false);
-        return;
-      }
-
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        setMessage('You must be logged in to publish');
-        setPublishing(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('blogs')
-        .insert([
-          {
-            title: title.trim(),
-            content: content,
-            category: category,
-            cover_image: coverImage,
-            is_published: true,
-            author_id: user.id
-          }
-        ])
-        .select();
-
-      if (error) throw error;
-
-      setMessage('Published successfully!');
-      setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error('Error publishing:', error);
       setMessage('Error publishing: ' + error.message);
@@ -161,14 +158,16 @@ export default function WritePage() {
           <div className="write-buttons">
             <button 
               onClick={handleSaveDraft}
-              disabled={saving}
+              disabled={busy}
+              aria-busy={saving}
               className="write-draft-btn"
             >
-              {saving ? 'Saving...' : 'Save Draft'}
+              {saving ? 'Saving...' : draftId ? 'Update Draft' : 'Save Draft'}
             </button>
             <button 
               onClick={handlePublish}
-              disabled={publishing}
+              disabled={busy}
+              aria-busy={publishing}
               className="write-publish-btn"
             >
               {publishing ? 'Publishing...' : 'Publish'}

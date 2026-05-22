@@ -16,7 +16,9 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 0.75rem;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .write-buttons {
@@ -71,6 +73,10 @@
 .write-content {
   display: flex;
   flex: 1;
+  /* Allow flex children to shrink below their intrinsic content size,
+     otherwise the toolbar / title push the editor wider than its track. */
+  min-height: 0;
+  min-width: 0;
 }
 
 .write-editor-section {
@@ -79,16 +85,84 @@
   display: flex;
   justify-content: center;
   overflow-y: auto;
+  /* Critical: lets this flex item shrink so the editor fits in
+     the remaining space next to the 320px sidebar. */
+  min-width: 0;
 }
 
 .write-editor-wrapper {
   width: 100%;
   max-width: 720px;
   padding: 0 1rem;
+  min-width: 0;
 }
 
 .write-sidebar {
   width: 320px;
+  flex-shrink: 0;
   border-left: 1px solid rgb(229, 231, 235);
   padding: 2rem 1.5rem;
+  overflow-y: auto;
+}
+
+/* ───────── Mobile (<768px): stack editor over sidebar ───────── */
+@media (max-width: 767px) {
+  /* Drop the rigid viewport-height lock so the page can scroll
+     naturally inside #app-scroll. */
+  .write-page {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .write-content {
+    flex-direction: column;
+    flex: 0 0 auto;
+  }
+
+  .write-editor-section {
+    flex: 0 0 auto;
+    overflow-y: visible;
+    padding: 1.25rem 0 1.5rem;
+  }
+
+  .write-editor-wrapper {
+    padding: 0 1rem;
+    max-width: 100%;
+  }
+
+  .write-sidebar {
+    width: 100%;
+    flex-shrink: 1;
+    border-left: none;
+    border-top: 1px solid rgb(229, 231, 235);
+    padding: 1.5rem 1rem 2rem;
+    overflow-y: visible;
+  }
+
+  /* Sticky action bar — always reachable on small screens. */
+  .write-footer {
+    padding: 0.75rem 1rem;
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  .write-actions {
+    justify-content: space-between;
+  }
+
+  .write-message {
+    flex-basis: 100%;
+    order: -1;
+  }
+
+  .write-buttons {
+    margin-left: auto;
+    gap: 0.5rem;
+  }
+
+  .write-publish-btn {
+    padding: 0.5rem 1rem;
+  }
 }

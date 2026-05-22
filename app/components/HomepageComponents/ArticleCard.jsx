@@ -12,11 +12,15 @@ export default function ArticleCard({ article }) {
   const {
     blog_id,
     title = "Untitled",
+    excerpt = "",
     content = "",
     cover_image,
     category = "General",
     profiles,
   } = article;
+
+  const preview =
+    excerpt || htmlToText(content).slice(0, 320).trim();
 
   const author = profiles?.name || "Anonymous";
   const authorAvatar =
@@ -28,7 +32,7 @@ export default function ArticleCard({ article }) {
 
   return (
     <Link href={`/articles/${blog_id}`} className="block transition-all hover:scale-[1.01] active:scale-[0.99] group">
-      <div className="bg-white p-6 md:p-8 rounded-[28px] border border-gray-100 flex flex-col-reverse md:flex-row justify-between gap-6 md:gap-12 transition-all hover:border-gray-300 hover:shadow-xl hover:shadow-gray-100/50">
+      <div className="bg-white p-6 md:p-8 rounded-[28px] border border-gray-200 shadow-sm flex flex-col-reverse md:flex-row justify-between gap-6 md:gap-12 transition-all hover:border-gray-300 hover:shadow-md">
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-4">
@@ -50,7 +54,7 @@ export default function ArticleCard({ article }) {
           </h3>
           
           <p className="text-sm md:text-base text-gray-500 line-clamp-3 md:line-clamp-2 leading-relaxed">
-            {htmlToText(content).slice(0, 1000) || "No description available."}
+            {preview || "No description available."}
           </p>
         </div>
 

@@ -98,10 +98,18 @@
 
 .editor-title {
   width: 100%;
-  font-size: 42px;
-  font-family: serif;
+  /* Scales 28px → 42px between mobile and desktop. */
+  font-size: clamp(1.75rem, 6vw, 2.625rem);
+  font-family: var(--font-google-sans), "Google Sans", sans-serif;
   font-weight: 600;
   line-height: 1.2;
+  /* Long unbreakable tokens shouldn't push the editor wider than its track. */
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
 }
 
 .editor-title::placeholder {
@@ -114,13 +122,18 @@
 
 .editor-content {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin-top: 1rem;
-  font-size: 1.125rem;
+  /* Slightly smaller body text on mobile, full size on larger screens. */
+  font-size: clamp(1rem, 2.5vw, 1.125rem);
   color: rgb(55, 65, 81);
   min-height: 400px;
-  line-height: 2;
+  line-height: 1.85;
   position: relative;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
 }
 
 .editor-content:focus {

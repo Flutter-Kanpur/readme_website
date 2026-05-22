@@ -4,7 +4,6 @@ import "./styles.css";
 
 const FOOTER_LINKS = [
   { name: "Help", href: "/help" },
-  { name: "Status", href: "/status" },
   { name: "Writers", href: "/writers" },
   { name: "Privacy", href: "/privacy" },
   { name: "Terms", href: "/terms" }

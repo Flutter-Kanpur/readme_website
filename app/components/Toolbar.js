@@ -1,18 +1,21 @@
-
-import Icon from './Icon';
 import './Toolbar.css';
 
+/**
+ * `icon` is now a React node (e.g. <List />, <Quote /> from lucide-react),
+ * not a {src, alt} object. The previous shape pointed at PNGs that don't
+ * exist in /public, which is why the toolbar was rendering broken images.
+ */
 function ToolbarButton({ onClick, className, title, type = 'button', icon, children }) {
   const handleClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
     onClick && onClick();
   };
-  
+
   const handleMouseDown = (e) => {
     e.preventDefault();
   };
-  
+
   return (
     <button
       onClick={handleClick}
@@ -20,8 +23,9 @@ function ToolbarButton({ onClick, className, title, type = 'button', icon, child
       className={className}
       title={title}
       type={type}
+      aria-label={title}
     >
-      {icon && <Icon src={icon.src} alt={icon.alt} className="toolbar-icon" />}
+      {icon}
       {children}
     </button>
   );

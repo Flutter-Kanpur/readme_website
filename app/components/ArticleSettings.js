@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Icon from './Icon';
+import { X, Upload } from 'lucide-react';
 import './ArticleSettings.css';
 
 export default function ArticleSettings({ onDataChange, initialData }) {
@@ -87,7 +87,7 @@ export default function ArticleSettings({ onDataChange, initialData }) {
         >
           {!featuredImage ? (
             <div className="image-upload-placeholder">
-              <Icon src="/assets/icons/upload.png" alt="Upload" className="upload-icon" />
+              <Upload className="upload-icon" aria-hidden="true" />
               <p className="upload-text">Click to upload image</p>
             </div>
           ) : (
@@ -101,8 +101,9 @@ export default function ArticleSettings({ onDataChange, initialData }) {
                 onClick={handleRemoveImage}
                 className="remove-image-btn"
                 type="button"
+                aria-label="Remove featured image"
               >
-                <Icon src="/assets/icons/close.png" alt="Remove" className="remove-icon" />
+                <X className="remove-icon" aria-hidden="true" />
               </button>
             </>
           )}
@@ -135,8 +136,9 @@ export default function ArticleSettings({ onDataChange, initialData }) {
                 onClick={() => handleRemoveTag(tag)}
                 className="tag-remove-btn"
                 type="button"
+                aria-label={`Remove tag ${tag}`}
               >
-                <Icon src="/assets/icons/close.png" alt="Remove" className="remove-icon" />
+                <X className="remove-icon" aria-hidden="true" />
               </button>
             </span>
           ))}
