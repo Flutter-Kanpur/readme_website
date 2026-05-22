@@ -5,6 +5,7 @@ import Editor from "../components/Editor";
 import ArticleSettings from "../components/ArticleSettings";
 import Navbar from '../components/Navbar/Navbar';
 import { supabase } from "@/app/lib/supabase";
+import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
 import './write.css';
 
 export default function WritePage() {
@@ -55,12 +56,14 @@ export default function WritePage() {
       return false;
     }
 
+    const cover_image = await resolveCoverImageUrl(coverImage, user.id, supabase);
+
     const payload = {
       title: title.trim(),
       content,
       category,
       tags,
-      cover_image: coverImage,
+      cover_image,
       is_published: isPublished,
     };
 

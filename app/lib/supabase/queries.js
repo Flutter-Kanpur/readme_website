@@ -1,5 +1,18 @@
 import { supabase } from './index'
 
+/**
+ * Cover images saved as base64 data URLs (from the editor upload) can be
+ * 10MB+ each. Embedding them in static/ISR HTML blows past Vercel's ~19MB
+ * page limit (FALLBACK_BODY_TOO_LARGE). Only pass through real HTTP(S) URLs
+ * for server-rendered listings; detail pages load covers client-side.
+ */
+export function sanitizeCoverImage(cover) {
+  if (!cover || typeof cover !== 'string') return null
+  const trimmed = cover.trim()
+  if (!trimmed || trimmed.startsWith('data:')) return null
+  return trimmed
+}
+
 function buildExcerpt(html, maxLength = 320) {
   if (!html || typeof html !== 'string') return ''
   const text = html
@@ -45,7 +58,10 @@ export async function getPublishedBlogsByAuthor(authorId) {
     throw new Error(error.message)
   }
 
-  return data || []
+  return (data || []).map((blog) => ({
+    ...blog,
+    cover_image: sanitizeCoverImage(blog.cover_image),
+  }))
 }
 
 export async function getAuthorByBlogId(blogId) {
@@ -133,7 +149,10 @@ export async function getRelatedArticlesByAuthorId(authorId, currentBlogId) {
     throw error
   }
 
-  return data
+  return (data || []).map((article) => ({
+    ...article,
+    cover_image: sanitizeCoverImage(article.cover_image),
+  }))
 }
 
 
@@ -179,7 +198,7 @@ export async function getLatestArticle(category = "for_you") {
     blog_id: blog.blog_id,
     title: blog.title,
     created_at: blog.created_at,
-    cover_image: blog.cover_image,
+    cover_image: sanitizeCoverImage(blog.cover_image),
     category: blog.category,
     profiles: blog.profiles,
     excerpt: buildExcerpt(contentById[blog.blog_id]),
