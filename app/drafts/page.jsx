@@ -47,7 +47,7 @@ export default function DraftsPage() {
   }, [router]);
 
   const handleEditDraft = (draftId) => {
-    router.push(`/write?draft=${draftId}`);
+    router.push(`/edit/${draftId}`);
   };
 
   const handleDeleteDraft = async (draftId) => {
@@ -110,7 +110,7 @@ export default function DraftsPage() {
 
   if (loading) {
     return (
-      <div className="drafts-page grid-background">
+      <div className="drafts-page">
         <Navbar />
         <div className="drafts-container">
           <div className="drafts-header">
@@ -128,7 +128,7 @@ export default function DraftsPage() {
   }
 
   return (
-    <div className="drafts-page grid-background">
+    <div className="drafts-page">
       <Navbar />
       <div className="drafts-container" style={{ position: 'relative', zIndex: 1 }}>
         <div className="drafts-header">

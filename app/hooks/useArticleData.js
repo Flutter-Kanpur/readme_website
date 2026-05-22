@@ -19,7 +19,8 @@ export function useArticlesData(activeFilter, initialData = []) {
         const data = await getLatestArticle(activeFilter);
         setBlogs(data || []);
       } catch (err) {
-        setError(err.message);
+        console.error("fetchArticles:", err);
+        setError(err?.message ?? "Failed to load articles");
       } finally {
         setLoading(false);
       }

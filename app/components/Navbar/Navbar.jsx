@@ -1,32 +1,238 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { usePathname, useRouter } from "next/navigation";
+import { ChevronDown, Menu } from "lucide-react";
+import BottomNav from "./BottomNav";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Articles", href: "/articles" },
 ];
 
-import { Menu as MenuIcon, X as CloseIcon, Home, BookOpen, Users, LogOut } from "lucide-react";
+function getDisplayName(user) {
+  return (
+    user?.user_metadata?.username ||
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "User"
+  );
+}
+
+function useClickOutside(ref, onClose) {
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [ref, onClose]);
+}
+
+function DropdownNavLinks({ pathname, user, mounted, onNavigate }) {
+  return (
+    <div className="navbar-pill__dropdown-nav">
+      {NAV_LINKS.map((link) => {
+        const isActive = pathname === link.href;
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            role="menuitem"
+            onClick={onNavigate}
+            className={`navbar-pill__dropdown-item${isActive ? " navbar-pill__dropdown-item--active" : ""}`}
+          >
+            {link.label}
+          </Link>
+        );
+      })}
+      {mounted && user && (
+        <Link
+          href="/drafts"
+          role="menuitem"
+          onClick={onNavigate}
+          className={`navbar-pill__dropdown-item${pathname === "/drafts" ? " navbar-pill__dropdown-item--active" : ""}`}
+        >
+          Drafts
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function NavDropdown({ open, onClose, trigger, children }) {
+  const ref = useRef(null);
+  useClickOutside(ref, onClose);
+
+  return (
+    <div ref={ref} className="relative flex shrink-0 items-center">
+      {trigger}
+      {open && (
+        <div role="menu" className="navbar-pill__dropdown">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UserProfile({ user, onSignOut, pathname, mounted }) {
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
+
+  const avatarSrc =
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    "/avatar.jpg";
+
+  return (
+    <NavDropdown
+      open={open}
+      onClose={close}
+      trigger={
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="inline-flex h-8 items-center gap-2 m-0 p-0 border-0 bg-transparent whitespace-nowrap cursor-pointer rounded-full hover:bg-gray-50 transition-colors leading-none"
+          aria-expanded={open}
+          aria-haspopup="menu"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={avatarSrc}
+            alt=""
+            width={32}
+            height={32}
+            className="block h-8 w-8 shrink-0 rounded-full object-cover"
+          />
+          <span className="navbar-pill__profile-name hidden md:inline text-sm leading-none text-gray-800 font-normal max-w-[120px] lg:max-w-[160px] truncate">
+            {getDisplayName(user)}
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-[#4285F4] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            strokeWidth={2.5}
+          />
+        </button>
+      }
+    >
+      <DropdownNavLinks
+        pathname={pathname}
+        user={user}
+        mounted={mounted}
+        onNavigate={close}
+      />
+      <Link
+        href={`/profile/${user.id}`}
+        role="menuitem"
+        onClick={close}
+        className="navbar-pill__dropdown-item"
+      >
+        Profile
+      </Link>
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => {
+          close();
+          onSignOut();
+        }}
+        className="navbar-pill__dropdown-item cursor-pointer border-0 bg-transparent"
+      >
+        Log out
+      </button>
+    </NavDropdown>
+  );
+}
+
+function MobileNavMenu({ user, mounted, pathname, onSignOut }) {
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
+
+  return (
+    <NavDropdown
+      open={open}
+      onClose={close}
+      trigger={
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="inline-flex h-8 w-8 items-center justify-center md:hidden m-0 p-0 border-0 bg-transparent text-gray-600 hover:text-black cursor-pointer"
+          aria-expanded={open}
+          aria-haspopup="menu"
+          aria-label="Open navigation menu"
+        >
+          <Menu className="h-6 w-6" strokeWidth={2} />
+        </button>
+      }
+    >
+      <DropdownNavLinks
+        pathname={pathname}
+        user={user}
+        mounted={mounted}
+        onNavigate={close}
+      />
+      {user ? (
+        <>
+          <Link
+            href={`/profile/${user.id}`}
+            role="menuitem"
+            onClick={close}
+            className="navbar-pill__dropdown-item"
+          >
+            Profile
+          </Link>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              close();
+              onSignOut();
+            }}
+            className="navbar-pill__dropdown-item cursor-pointer border-0 bg-transparent"
+          >
+            Log out
+          </button>
+        </>
+      ) : (
+        <Link
+          href="/login"
+          role="menuitem"
+          onClick={close}
+          className="navbar-pill__dropdown-item"
+        >
+          Login
+        </Link>
+      )}
+    </NavDropdown>
+  );
+}
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  
+
   const pathname = usePathname();
   const router = useRouter();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  };
 
   useEffect(() => {
     setMounted(true);
     const checkUser = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
       } catch (error) {
         console.error("Session check error:", error);
@@ -50,36 +256,49 @@ export default function Navbar() {
     };
   }, []);
 
+  const navLinkClass = (isActive) =>
+    isActive
+      ? "text-black font-semibold"
+      : "text-gray-500 font-normal hover:text-gray-800";
+
+  const linkBaseClass =
+    "navbar-pill__link inline-flex h-8 items-center text-sm leading-none transition-colors shrink-0";
+
   return (
     <>
-      <nav className="sticky top-0 z-[100] w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          {/* Left: Logo */}
-          <div className="flex-1 flex justify-start">
-            <Link href="/" className="flex items-center gap-2 cursor-pointer transition-transform active:scale-95">
-              <div className="bg-black p-1 rounded-sm shrink-0">
-                <Image
-                  src="/assets/icons/logo.svg"
-                  width={24}
-                  height={24}
-                  alt="logo"
-                  className="w-5 h-5 md:w-6 md:h-6"
-                />
-              </div>
-              <span className="text-xl md:text-2xl font-bold truncate text-black">Readme</span>
-            </Link>
-          </div>
-          
-          {/* Center: Desktop Navigation */}
-          <div className="hidden lg:flex gap-8 items-center justify-center flex-1">
+    <header className="top-navbar relative z-10 w-full pt-4 px-4 sm:px-6 md:px-8">
+      <nav
+        aria-label="Main"
+        className="navbar-pill max-w-6xl mx-auto h-14 md:h-[60px] px-5 md:px-8 bg-white border border-gray-200 rounded-full shadow-sm"
+      >
+        <div className="navbar-pill__row">
+          {/* Left — logo + brand */}
+          <Link
+            href="/"
+            className="navbar-pill__start gap-2.5 transition-transform active:scale-95"
+          >
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-black p-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/icons/logo.svg"
+                alt=""
+                width={40}
+                height={40}
+                className="block h-5 w-5 max-h-5 max-w-5 object-contain"
+              />
+            </span>
+            <span className="navbar-pill__brand shrink-0">Readme</span>
+          </Link>
+
+          {/* Center — desktop links only */}
+          <div className="navbar-pill__center">
             {NAV_LINKS.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`${isActive ? "text-black font-bold" : "text-gray-500"
-                    } hover:text-black transition-colors text-sm font-medium`}
+                  className={`${linkBaseClass} ${navLinkClass(isActive)}`}
                 >
                   {link.label}
                 </Link>
@@ -88,138 +307,47 @@ export default function Navbar() {
             {mounted && user && (
               <Link
                 href="/drafts"
-                className={`${pathname === "/drafts" ? "text-black font-bold" : "text-gray-600"
-                  } hover:text-black transition-colors text-sm font-medium`}
+                className={`${linkBaseClass} ${navLinkClass(pathname === "/drafts")}`}
               >
                 Drafts
               </Link>
             )}
           </div>
 
-          {/* Right: User Profile & Mobile Toggle */}
-          <div className="flex-1 flex justify-end items-center gap-4">
+          {/* Right — profile / login */}
+          <div className="navbar-pill__end">
             {mounted && !loading && (
-              user ? (
-                <div className="flex items-center gap-3">
-                  <Link href={`/profile/${user.id}`} className="transition-transform hover:scale-110 active:scale-95 shrink-0">
-                    <Image
-                      src={user?.user_metadata?.avatar_url || user?.user_metadata?.picture || "/avatar.jpg"}
-                      alt="User"
-                      width={32}
-                      height={32}
-                      className="rounded-full ring-2 ring-gray-100 object-cover w-8 h-8 cursor-pointer"
+              <>
+                {user ? (
+                  <UserProfile
+                    user={user}
+                    onSignOut={handleSignOut}
+                    pathname={pathname}
+                    mounted={mounted}
+                  />
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className={`${linkBaseClass} hidden md:inline-flex text-black hover:text-gray-700 whitespace-nowrap`}
+                    >
+                      Login
+                    </Link>
+                    <MobileNavMenu
+                      user={null}
+                      mounted={mounted}
+                      pathname={pathname}
+                      onSignOut={handleSignOut}
                     />
-                  </Link>
-                  <button
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      router.push("/");
-                      router.refresh();
-                    }}
-                    className="hidden lg:block bg-transparent text-[#1e293b] border border-gray-200 px-5 py-1.5 rounded-full text-sm font-semibold shadow-none hover:bg-gray-50 transition-colors cursor-pointer"
-                  >
-                    Log Out
-                  </button>
-                  
-                  <button 
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="lg:hidden p-1 text-gray-500 hover:text-black transition-colors cursor-pointer"
-                  >
-                    {isMenuOpen ? <CloseIcon className="w-6 h-6 stroke-[2.5px]" /> : <MenuIcon className="w-7 h-7 stroke-[2px]" />}
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                   <Link
-                    href="/login"
-                    className="bg-black text-white px-6 md:px-8 py-2 md:py-2 rounded-full text-xs md:text-sm font-bold shadow-md inline-flex items-center justify-center white-nowrap"
-                  >
-                    Login
-                  </Link>
-
-                   <button 
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="lg:hidden p-1 text-gray-500 hover:text-black transition-colors cursor-pointer"
-                  >
-                    {isMenuOpen ? <CloseIcon className="w-6 h-6 stroke-[2.5px]" /> : <MenuIcon className="w-7 h-7 stroke-[2px]" />}
-                  </button>
-                </div>
-              )
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* Mobile Sidebar - Structural Isolation */}
-      <div className={`lg:hidden fixed inset-0 z-[9999] transition-all duration-300 ease-in-out ${isMenuOpen ? 'visible opacity-100' : 'invisible opacity-0'}`}>
-        <div 
-          className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isMenuOpen ? 'opacity-100' : 'opacity-0'}`} 
-          onClick={() => setIsMenuOpen(false)}
-        />
-        
-        <div 
-          className={`fixed top-0 right-0 h-full w-[300px] bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.1)] flex flex-col border-l border-gray-100 transition-all duration-500 transform rounded-l-[32px] ${isMenuOpen ? 'translate-x-0' : 'translate-x-full opacity-0'}`}
-          style={{ backgroundColor: 'white' }}
-        >
-          <div className="flex items-center justify-between p-8 pb-4">
-             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Navigation</span>
-             <button 
-              onClick={() => setIsMenuOpen(false)}
-              className="p-2 -mr-2 text-gray-400 hover:text-black transition-colors cursor-pointer"
-            >
-              <CloseIcon className="w-8 h-8 stroke-[2px]" />
-            </button>
-          </div>
-
-          <div className="flex flex-col px-8 gap-0.5 mt-2 overflow-y-auto pb-20">
-            {NAV_LINKS.map((link) => {
-              const Icon = link.label === 'Home' ? Home : 
-                           link.label === 'Articles' ? BookOpen :
-                           link.label === 'Community' ? Users :
-                           BookOpen; 
-              
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`py-3.5 flex items-center gap-4 text-base font-medium transition-all duration-300 border-b border-gray-50/50 ${pathname === link.href ? 'text-black' : 'text-gray-500 hover:text-black'}`}
-                >
-                  <Icon className={`w-5 h-5 ${pathname === link.href ? 'text-blue-500' : 'text-gray-400'}`} />
-                  {link.label}
-                </Link>
-              );
-            })}
-            
-            {user && (
-               <>
-                <Link
-                  href="/drafts"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`py-3.5 flex items-center gap-4 text-base font-medium transition-all duration-300 border-b border-gray-50/50 ${pathname === '/drafts' ? 'text-black' : 'text-gray-500'}`}
-                >
-                  <BookOpen className={`w-5 h-5 ${pathname === '/drafts' ? 'text-blue-500' : 'text-gray-400'}`} />
-                  Drafts
-                </Link>
-                <div className="mt-auto px-0 pb-10">
-                  <button
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      setIsMenuOpen(false);
-                      router.push("/");
-                      router.refresh();
-                    }}
-                    className="w-full flex items-center gap-4 text-left py-4 text-base font-semibold text-red-500 mt-4 cursor-pointer"
-                  >
-                    <LogOut className="w-5 h-5" />
-                    Logout
-                  </button>
-                </div>
+                  </>
+                )}
               </>
             )}
           </div>
         </div>
-      </div>
+      </nav>
+    </header>
+    <BottomNav user={user} pathname={pathname} />
     </>
   );
 }

@@ -82,7 +82,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="page grid-background">
+      <div className="page">
         <Navbar />
         <div className="container" style={{ position: 'relative', zIndex: 1 }}>
           <div className="profileSection">
@@ -120,7 +120,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="page grid-background">
+    <div className="page">
       <Navbar />
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
         <div className="profileSection">

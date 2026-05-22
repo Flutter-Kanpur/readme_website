@@ -1,5 +1,17 @@
 import { supabase } from './index'
 
+function buildExcerpt(html, maxLength = 320) {
+  if (!html || typeof html !== 'string') return ''
+  const text = html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!text) return ''
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, maxLength).trim()}…`
+}
+
 export async function getProfileById(userId) {
   if (!userId) return null
 
@@ -131,11 +143,9 @@ export async function getLatestArticle(category = "for_you") {
     .select(`
       blog_id,
       title,
-      content,
       created_at,
       cover_image,
       category,
-      is_published,
       profiles (
         name,
         avatar_url
@@ -143,13 +153,35 @@ export async function getLatestArticle(category = "for_you") {
     `)
     .eq("is_published", true)
     .order("created_at", { ascending: false });
+
   if (category !== "for_you") {
     query = query.eq("category", category);
   }
-  query = query.limit(3);
 
-  const { data, error } = await query;
+  const { data: blogs, error } = await query.limit(3);
 
   if (error) throw error;
-  return data;
+  if (!blogs?.length) return [];
+
+  const ids = blogs.map((b) => b.blog_id);
+  const { data: contentRows, error: contentError } = await supabase
+    .from("blogs")
+    .select("blog_id, content")
+    .in("blog_id", ids);
+
+  if (contentError) throw contentError;
+
+  const contentById = Object.fromEntries(
+    (contentRows ?? []).map((row) => [row.blog_id, row.content]),
+  );
+
+  return blogs.map((blog) => ({
+    blog_id: blog.blog_id,
+    title: blog.title,
+    created_at: blog.created_at,
+    cover_image: blog.cover_image,
+    category: blog.category,
+    profiles: blog.profiles,
+    excerpt: buildExcerpt(contentById[blog.blog_id]),
+  }));
 }

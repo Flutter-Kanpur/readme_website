@@ -5,20 +5,158 @@
 }
 
 :root {
-  --background: #ffffff;
+  --background: #000000;
   --foreground: #171717;
+}
+
+/* Hard-lock the root: html/body never scroll, so they cannot
+   rubber-band/pull-down and expose any background color.
+   All scrolling happens inside #app-scroll below. */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Belt-and-braces: even if a browser ignores the lock,
+   match the top of the .grid-background gradient so nothing
+   jarring (white/black) is ever exposed. */
+html {
+  background-color: #9CC8FE;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
 
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-google-sans), "Google Sans", sans-serif;
 }
+
+/* The single, full-viewport scroll container.
+   Uses 100dvh so iOS address-bar resizing doesn't cut content off,
+   and overscroll-behavior: none stops this container from bouncing too. */
+#app-scroll {
+  height: 100dvh;
+  /* Fallback for older browsers that don't support dvh */
+  min-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  background-color: #9CC8FE;
+}
+
+/* Reserve space at the bottom of the page on mobile so content
+   (and the footer) doesn't hide under the fixed BottomNav.
+   Use a white background here — #app-scroll defaults to #9CC8FE
+   (for overscroll at the top), but that same color was visible as a
+   blue strip in the padding gap above the fixed bottom nav. */
+@media (max-width: 767px) {
+  #app-scroll {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    background-color: #ffffff;
+  }
+}
+
+/* ───────── Top pill navbar visibility ─────────
+   We hide the top header below md (mobile) and show it from md upward.
+   Doing this in plain CSS rather than through Tailwind's `hidden md:block`
+   sidesteps two pitfalls:
+     1. `Editor.css` / `ArticleSettings.css` define their own
+        non-layered `.hidden { display: none }` which can collide with
+        Tailwind's utility `.hidden`.
+     2. Tailwind v4 puts utilities inside `@layer utilities` (lower
+        priority than non-layered rules), so utility class precedence is
+        not always reliable across cross-file CSS. */
+.top-navbar {
+  /* !important so no other rule (Tailwind utility, Editor.css's plain
+     .hidden, layered/non-layered ordering, etc.) can leak the top
+     header onto mobile or hide it on desktop. */
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .top-navbar {
+    display: block !important;
+  }
+}
+
+/* ───────── Mobile bottom navigation bar ─────────
+   Hidden by default; only shown below the md breakpoint via the media
+   query below. We can't rely on Tailwind's `md:hidden` alone here because
+   `.bottom-nav` is a non-layered rule and Tailwind utilities live inside
+   `@layer utilities` (lower priority), so the rule below would otherwise
+   leak the bar onto desktop. */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  /* !important — same reasoning as .top-navbar above. */
+  display: none !important;
+  align-items: stretch;
+  background-color: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  /* Respect iPhone home indicator. */
+  padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
+}
+
+@media (max-width: 767px) {
+  .bottom-nav {
+    display: flex !important;
+  }
+}
+
+.bottom-nav__tab {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  color: #9ca3af;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav__tab:active {
+  transform: scale(0.96);
+}
+
+.bottom-nav__tab--active {
+  color: #4285F4;
+  font-weight: 600;
+}
+
+.bottom-nav__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+}
+
+.bottom-nav__label {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
 /* Entry Animations */
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .shimmer {
@@ -28,12 +166,167 @@ body {
 }
 
 .grid-background {
-  background-color: #ffffff;
-  background-image:
-    linear-gradient(to right, #f1f1f1 1px, transparent 1px),
-    linear-gradient(to bottom, #f1f1f1 1px, transparent 1px);
-  background-size: 40px 40px;
+  background: linear-gradient(180deg, #9CC8FE 0%, #eff6ff 25%, #ffffff 60%);
 
-  font-family: ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-google-sans), "Google Sans", sans-serif;
+}
+
+/* Navbar pill container */
+.navbar-pill {
+  display: flex;
+  align-items: center;
+  overflow: visible;
+}
+
+.navbar-pill__dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 1.5rem);
+  z-index: 110;
+  min-width: 11rem;
+  border-radius: 1rem;
+  background-color: #fff;
+  padding: 0.5rem 0;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid #f3f4f6;
+}
+
+.navbar-pill__dropdown-nav {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+@media (min-width: 768px) {
+  .navbar-pill__dropdown-nav {
+    display: none;
+  }
+}
+
+.navbar-pill__dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1;
+  text-align: left;
+  color: #374151;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.navbar-pill__dropdown-item:hover {
+  color: #000;
+  background-color: #f9fafb;
+}
+
+.navbar-pill__dropdown-item--active {
+  color: #000;
+  font-weight: 600;
+}
+
+/* Center links: dialog only on mobile, visible in bar on md+ */
+.navbar-pill__center {
+  display: none !important;
+  visibility: hidden;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  gap: 0;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .navbar-pill__center {
+    display: flex !important;
+    visibility: visible;
+    width: auto;
+    min-width: 0;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+    gap: 1.5rem;
+    pointer-events: auto;
+  }
+}
+
+/* Main row — logo | links | profile on one center line */
+.navbar-pill__row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 2rem;
+  line-height: 1;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .navbar-pill__row {
+    gap: 1.5rem;
+  }
+}
+
+.navbar-pill__start,
+.navbar-pill__end {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 2rem;
+  flex-shrink: 0;
+}
+
+.navbar-pill__center {
+  flex-direction: row;
+  align-items: center;
+  height: 2rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.navbar-pill__start {
+  height: auto;
+}
+
+.navbar-pill__brand {
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #000;
+}
+
+@media (min-width: 1024px) {
+  .navbar-pill__center {
+    gap: 2.25rem;
+  }
+}
+
+.navbar-pill__end {
+  gap: 0.75rem;
+}
+
+/* Wrapped in :where() so specificity is 0 — this is just a default
+   layout for navbar items. Tailwind utilities like `hidden` /
+   `md:hidden` on individual links/buttons must be able to override it. */
+:where(.navbar-pill__end a),
+:where(.navbar-pill__end button),
+:where(.navbar-pill__center a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  margin: 0;
+  line-height: 1;
+}
+
+@media (max-width: 767px) {
+  .navbar-pill__center a {
+    display: none !important;
+  }
 }

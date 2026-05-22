@@ -1,8 +1,15 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
+import {
+  List,
+  ListOrdered,
+  Quote,
+  Link2,
+  ImageIcon,
+  X,
+} from 'lucide-react';
 import Toolbar from "./Toolbar";
-import Icon from './Icon';
 import './Editor.css';
 
 export default function Editor({ onDataChange, initialData }) {
@@ -654,8 +661,9 @@ export default function Editor({ onDataChange, initialData }) {
                 onClick={cancelLink}
                 className="link-dialog-close"
                 type="button"
+                aria-label="Close"
               >
-                <Icon src="/assets/icons/close.png" alt="Close" className="link-dialog-close-icon" />
+                <X className="link-dialog-close-icon" aria-hidden="true" />
               </button>
             </div>
             <input
@@ -701,11 +709,11 @@ export default function Editor({ onDataChange, initialData }) {
               { label: 'B', onClick: () => handleFormat('bold'), className: `toolbar-btn toolbar-btn-bold ${formatStates.bold ? 'toolbar-btn-active' : ''}`, title: 'Bold (Ctrl+B)' },
               { label: 'I', onClick: () => handleFormat('italic'), className: `toolbar-btn toolbar-btn-italic ${formatStates.italic ? 'toolbar-btn-active' : ''}`, title: 'Italic (Ctrl+I)' },
               { label: 'U', onClick: () => handleFormat('underline'), className: `toolbar-btn toolbar-btn-underline ${formatStates.underline ? 'toolbar-btn-active' : ''}`, title: 'Underline (Ctrl+U)' },
-              { icon: { src: '/assets/icons/bullet-list.png', alt: 'Bullet List' }, onClick: handleUnorderedList, className: 'toolbar-btn toolbar-btn-icon toolbar-btn-bullet-list', title: 'Bullet List' },
-              { icon: { src: '/assets/icons/numbered-list.png', alt: 'Numbered List' }, onClick: handleOrderedList, className: 'toolbar-btn toolbar-btn-icon toolbar-btn-numbered-list', title: 'Numbered List' },
-              { icon: { src: '/assets/icons/quote.png', alt: 'Quote' }, onClick: handleQuote, className: 'toolbar-btn toolbar-btn-icon', title: 'Quote' },
-              { icon: { src: '/assets/icons/link.png', alt: 'Link' }, onClick: handleLink, className: 'toolbar-btn toolbar-btn-icon', title: 'Link' },
-              { icon: { src: '/assets/icons/image.png', alt: 'Image' }, onClick: handleImage, className: 'toolbar-btn toolbar-btn-icon', title: 'Image' },
+              { icon: <List className="toolbar-icon" aria-hidden="true" />, onClick: handleUnorderedList, className: 'toolbar-btn toolbar-btn-icon toolbar-btn-bullet-list', title: 'Bullet List' },
+              { icon: <ListOrdered className="toolbar-icon" aria-hidden="true" />, onClick: handleOrderedList, className: 'toolbar-btn toolbar-btn-icon toolbar-btn-numbered-list', title: 'Numbered List' },
+              { icon: <Quote className="toolbar-icon" aria-hidden="true" />, onClick: handleQuote, className: 'toolbar-btn toolbar-btn-icon', title: 'Quote' },
+              { icon: <Link2 className="toolbar-icon" aria-hidden="true" />, onClick: handleLink, className: 'toolbar-btn toolbar-btn-icon', title: 'Link' },
+              { icon: <ImageIcon className="toolbar-icon" aria-hidden="true" />, onClick: handleImage, className: 'toolbar-btn toolbar-btn-icon', title: 'Image' },
             ]
           ]}
         />

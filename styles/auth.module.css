@@ -3,7 +3,7 @@
   height: 100vh;
   display: grid;
   place-items: center;
-  font-family: var(--font-product-sans);
+  font-family: var(--font-google-sans), "Google Sans", sans-serif;
   color: #111827;
   background-color: #f8fafc;
   padding: 24px;

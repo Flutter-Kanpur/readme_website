@@ -14,8 +14,18 @@
 
 .name {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   margin: 0;
   color: #000;
   cursor: pointer;
+}
+
+.name:hover {
+  color: #2563eb;
+}
+
+.article-meta {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
 }

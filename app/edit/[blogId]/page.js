@@ -112,6 +112,11 @@ export default function EditPage({ params }) {
       setTimeout(() => setMessage(''), 3000);
       if (isPublished) {
         router.push('/');
+      } else {
+        // Take the user back to their drafts list after a successful save —
+        // matches the mental model of "I edited a draft, return me to the list."
+        // Small delay so the success toast is visible before navigating.
+        setTimeout(() => router.push('/drafts'), 600);
       }
     } catch (error) {
       console.error('Error updating:', error);

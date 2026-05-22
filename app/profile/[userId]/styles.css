@@ -2,6 +2,7 @@
 .page {
   min-height: 100vh;
   position: relative;
+  background: #fff;
 }
 
 /* Main Content Container */
