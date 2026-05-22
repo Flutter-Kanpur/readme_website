@@ -82,6 +82,44 @@ body {
   }
 }
 
+/* Logged-out Login — same pill style as Hero primary CTA (desktop top bar only) */
+.top-navbar__login {
+  display: none !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: auto !important;
+  margin: 0;
+  padding: 0.625rem 1.5rem;
+  border-radius: 9999px;
+  background-color: #000;
+  color: #fff !important;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.top-navbar__login:hover {
+  background-color: #1f2937;
+  color: #fff !important;
+}
+
+.top-navbar__login:active {
+  transform: scale(0.95);
+}
+
+@media (min-width: 768px) {
+  .top-navbar__login {
+    display: inline-flex !important;
+  }
+}
+
 /* ───────── Mobile bottom navigation bar ─────────
    Hidden by default; only shown below the md breakpoint via the media
    query below. We can't rely on Tailwind's `md:hidden` alone here because
