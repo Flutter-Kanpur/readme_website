@@ -5,6 +5,7 @@ import Editor from "../../components/Editor";
 import ArticleSettings from "../../components/ArticleSettings";
 import Navbar from '../../components/Navbar/Navbar';
 import { supabase } from "@/app/lib/supabase";
+import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
 import '@/app/write/write.css';
 import { useRouter } from 'next/navigation';
 
@@ -93,6 +94,12 @@ export default function EditPage({ params }) {
         return;
       }
 
+      const cover_image = await resolveCoverImageUrl(
+        coverImage,
+        user.id,
+        supabase,
+      );
+
       const { error } = await supabase
         .from('blogs')
         .update({
@@ -100,7 +107,7 @@ export default function EditPage({ params }) {
           content: content,
           category: category,
           tags: tags,
-          cover_image: coverImage,
+          cover_image,
           is_published: isPublished
         })
         .eq('blog_id', blogId)
