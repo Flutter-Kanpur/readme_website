@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, Menu } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import BottomNav from "./BottomNav";
 
 const NAV_LINKS = [
@@ -149,69 +149,6 @@ function UserProfile({ user, onSignOut, pathname, mounted }) {
   );
 }
 
-function MobileNavMenu({ user, mounted, pathname, onSignOut }) {
-  const [open, setOpen] = useState(false);
-  const close = () => setOpen(false);
-
-  return (
-    <NavDropdown
-      open={open}
-      onClose={close}
-      trigger={
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="inline-flex h-8 w-8 items-center justify-center md:hidden m-0 p-0 border-0 bg-transparent text-gray-600 hover:text-black cursor-pointer"
-          aria-expanded={open}
-          aria-haspopup="menu"
-          aria-label="Open navigation menu"
-        >
-          <Menu className="h-6 w-6" strokeWidth={2} />
-        </button>
-      }
-    >
-      <DropdownNavLinks
-        pathname={pathname}
-        user={user}
-        mounted={mounted}
-        onNavigate={close}
-      />
-      {user ? (
-        <>
-          <Link
-            href={`/profile/${user.id}`}
-            role="menuitem"
-            onClick={close}
-            className="navbar-pill__dropdown-item"
-          >
-            Profile
-          </Link>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              close();
-              onSignOut();
-            }}
-            className="navbar-pill__dropdown-item cursor-pointer border-0 bg-transparent"
-          >
-            Log out
-          </button>
-        </>
-      ) : (
-        <Link
-          href="/login"
-          role="menuitem"
-          onClick={close}
-          className="navbar-pill__dropdown-item"
-        >
-          Login
-        </Link>
-      )}
-    </NavDropdown>
-  );
-}
-
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -326,20 +263,9 @@ export default function Navbar() {
                     mounted={mounted}
                   />
                 ) : (
-                  <>
-                    <Link
-                      href="/login"
-                      className={`${linkBaseClass} hidden md:inline-flex text-black hover:text-gray-700 whitespace-nowrap`}
-                    >
-                      Login
-                    </Link>
-                    <MobileNavMenu
-                      user={null}
-                      mounted={mounted}
-                      pathname={pathname}
-                      onSignOut={handleSignOut}
-                    />
-                  </>
+                  <Link href="/login" className="top-navbar__login">
+                    Login
+                  </Link>
                 )}
               </>
             )}
