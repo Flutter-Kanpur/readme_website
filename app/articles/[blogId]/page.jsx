@@ -1,161 +1,84 @@
-'use client'
+import { Suspense } from "react";
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import Navbar from "@/app/components/Navbar/Navbar";
+import Footer from "@/components/Footer/Footer";
+import ArticleCardAuthorInfo from "@/components/ArticleCardAuthorInfo/ArticleCardAuthorInfo";
+import { getArticleWithAuthor } from "@/app/lib/supabase/queries";
+import RelatedArticlesSection from "./RelatedArticlesSection";
+import RelatedArticlesSidebarSkeleton from "./RelatedArticlesSidebarSkeleton";
+import AuthorCardSection from "./AuthorCardSection";
+import SideBannerAd from "./SideBannerAd";
+import "./styles.css";
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import Image from 'next/image'
+export const revalidate = 60;
 
-import {
-    getBlogDetailByBlogId,
-    getAuthorByBlogId,
-    getRelatedArticlesByAuthorId
-} from '@/app/lib/supabase/queries'
+export default async function ArticlePage({ params }) {
+  const { blogId } = await params;
+  const data = await getArticleWithAuthor(blogId);
 
-import AuthorCard from '@/components/AuthorCard/AuthorCard'
-import RelatedArticles from '@/components/RelatedArticles/RelatedArticles'
-import WeeklyRead from '@/components/WeeklyRead/WeeklyRead'
-import ProTip from '@/components/ProTip/ProTip'
+  if (!data?.blog) {
+    notFound();
+  }
 
-import './styles.css'
-import Navbar from '@/app/components/Navbar/Navbar'
-import Footer from '@/components/Footer/Footer'
-import ArticleCardAuthorInfo from '../../../components/ArticleCardAuthorInfo/ArticleCardAuthorInfo'
+  const { blog, author, coauthors = [], community } = data;
 
-export default function ArticlePage() {
-    const params = useParams()
-    const router = useRouter()
+  const allAuthors = [author, ...coauthors].filter(
+    (profile, index, list) =>
+      profile?.authorId &&
+      list.findIndex((item) => item.authorId === profile.authorId) === index,
+  );
 
-    const [blog, setBlog] = useState(null)
-    const [author, setAuthor] = useState(null)
-    const [relatedArticles, setRelatedArticles] = useState([])
-    const [loading, setLoading] = useState(true)
+  return (
+    <div className="article-page">
+      <Navbar />
+      <div className="article-page-layout">
+        <SideBannerAd position="left" />
+        <div className="article-container">
+          <article className="article-main">
+            <h1 className="article-title">{blog.title}</h1>
 
-    useEffect(() => {
-        async function loadPage() {
-            try {
-                const blogData = await getBlogDetailByBlogId(params.blogId)
+            {author && (
+              <ArticleCardAuthorInfo
+                author={author}
+                coauthors={coauthors}
+                community={community}
+                createdAt={blog.created_at}
+              />
+            )}
 
-                // Only show published blogs
-                if (!blogData?.is_published) {
-                    setBlog(null)
-                    return
-                }
+            {blog.cover_image && (
+              <div className="article-cover">
+                <Image
+                  src={blog.cover_image}
+                  alt={blog.title}
+                  width={1200}
+                  height={630}
+                  className="cover-image"
+                  priority
+                />
+              </div>
+            )}
 
-                setBlog(blogData)
+            <div
+              className="article-content"
+              dangerouslySetInnerHTML={{ __html: blog.content }}
+            />
+          </article>
 
-                const authorData = await getAuthorByBlogId(params.blogId)
-                setAuthor(authorData)
-
-                if (blogData.author_id) {
-                    const related = await getRelatedArticlesByAuthorId(
-                        // authorData.id,
-                        blogData.author_id,
-                        blogData.blog_id
-                    )
-                    setRelatedArticles(related || [])
-                }
-            } catch (err) {
-                console.error('Error loading page:', err)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        loadPage()
-    }, [params.blogId])
-
-    // Always redirect to login
-    // function handleAuthRedirect() {
-    //     router.push('/login')
-    // }
-
-    function handleAuthorProfile() {
-        router.push(`/profile/${author.authorId}`);
-    }
-
-    if (loading) {
-        return (
-            <div className="article-page">
-                <Navbar />
-                <p className="loading">Loading...</p>
-            </div>
-        )
-    }
-
-    if (!blog) {
-        return (
-            <div className="article-page">
-                <Navbar />
-                <p className="error">Blog not found or unpublished</p>
-            </div>
-        )
-    }
-
-    return (
-        <div className="article-page">
-            <Navbar />
-            <div className="article-container">
-
-                <main className="article-main">
-                    {author && (
-                        <ArticleCardAuthorInfo
-                            author={author}
-                            createdAt={blog.created_at}
-                            handleAuthorProfile={handleAuthorProfile}
-                        />
-                    )}
-
-                    {blog.title && (
-                        <h1 className="article-title">
-                            {blog.title}
-                        </h1>
-                    )}
-
-
-                    {blog.cover_image && (
-                        <Image
-                            src={blog.cover_image}
-                            alt={blog.title || 'Blog cover'}
-                            width={1200}
-                            height={600}
-                            className="article-cover"
-                            priority
-                        />
-                    )}
-
-                    {blog.content && (
-                        <article
-                            className="article-content"
-                            dangerouslySetInnerHTML={{
-                                __html: blog.content
-                            }}
-                        />
-                    )}
-
-                </main>
-
-                <aside className="article-sidebar">
-                    {author && (
-                        <AuthorCard
-                            author={{
-                                name: author.name,
-                                bio: author.bio,
-                                avatar: author.avatar_url || "/avatar.jpg",
-                                headline: author.headline
-                            }}
-                        // onFollow={handleAuthRedirect}
-                        />
-                    )}
-
-                    <RelatedArticles articles={relatedArticles} />
-
-                    <WeeklyRead
-                        text="Get the best design and development articles delivered to your inbox."
-                    // onSubscribe={handleAuthRedirect}
-                    />
-                </aside>
-
-            </div>
-            <Footer />
+          <aside className="article-sidebar">
+            <AuthorCardSection authors={allAuthors} />
+            <Suspense fallback={<RelatedArticlesSidebarSkeleton />}>
+              <RelatedArticlesSection
+                authorId={blog.author_id}
+                blogId={blog.blog_id}
+              />
+            </Suspense>
+          </aside>
         </div>
-    )
+        <SideBannerAd position="right" />
+      </div>
+      <Footer />
+    </div>
+  );
 }

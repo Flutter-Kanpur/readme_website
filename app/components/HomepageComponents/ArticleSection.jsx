@@ -7,6 +7,7 @@ import { useArticlesData } from "../../hooks/useArticleData";
 
 const FILTERS = [
   { label: "For You", value: "for_you" },
+  { label: "Communities", value: "communities" },
   { label: "Backend", value: "backend" },
   { label: "Design", value: "design" },
   { label: "Technology", value: "Technology" },

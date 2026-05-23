@@ -9,8 +9,16 @@ import BottomNav from "./BottomNav";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
-  { label: "Articles", href: "/articles" },
+  { label: "Articles", href: "/articles", matchPrefix: true },
+  { label: "Communities", href: "/communities", matchPrefix: true },
 ];
+
+function isNavLinkActive(pathname, link) {
+  if (link.matchPrefix) {
+    return pathname === link.href || pathname?.startsWith(`${link.href}/`);
+  }
+  return pathname === link.href;
+}
 
 function getDisplayName(user) {
   return (
@@ -38,7 +46,7 @@ function DropdownNavLinks({ pathname, user, mounted, onNavigate }) {
   return (
     <div className="navbar-pill__dropdown-nav">
       {NAV_LINKS.map((link) => {
-        const isActive = pathname === link.href;
+        const isActive = isNavLinkActive(pathname, link);
         return (
           <Link
             key={link.href}
@@ -165,31 +173,16 @@ export default function Navbar() {
 
   useEffect(() => {
     setMounted(true);
-    const checkUser = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.error("Session check error:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    checkUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      },
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -230,7 +223,7 @@ export default function Navbar() {
           {/* Center — desktop links only */}
           <div className="navbar-pill__center">
             {NAV_LINKS.map((link) => {
-              const isActive = pathname === link.href;
+              const isActive = isNavLinkActive(pathname, link);
               return (
                 <Link
                   key={link.href}

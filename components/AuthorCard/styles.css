@@ -10,15 +10,41 @@
 
 .author-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
 }
 
-.author-avatar {
+.author-avatar-link {
+  flex: 0 0 64px;
+  display: block;
   width: 64px;
   height: 64px;
+  min-width: 64px;
+  min-height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.author-avatar,
+.author-avatar-link img {
+  width: 64px !important;
+  height: 64px !important;
+  min-width: 64px;
+  min-height: 64px;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Next.js Image wrapper */
+.author-avatar-link > span {
+  display: block !important;
+  width: 64px !important;
+  height: 64px !important;
+  min-width: 64px !important;
+  min-height: 64px !important;
   flex-shrink: 0;
 }
 
@@ -53,4 +79,18 @@
   color: #4b5563;
   line-height: 1.6;
   margin: 0;
+}
+
+.author-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.author-name-link:hover .author-name {
+  color: #2563eb;
+}
+
+.author-card__follow-btn {
+  width: 100%;
+  margin-top: auto;
 }

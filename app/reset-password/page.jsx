@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
+import { getSafeSession } from "@/app/lib/supabase/auth";
 import styles from "@/styles/auth.module.css";
 
 export default function ResetPassword() {
@@ -34,8 +35,8 @@ export default function ResetPassword() {
         }
 
         
-        const { data } = await supabase.auth.getSession();
-        if (!data?.session) {
+        const session = await getSafeSession();
+        if (!session) {
           setMessage({
             type: "error",
             text: "Auth session missing. Please open the latest reset link again or request a new one.",

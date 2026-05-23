@@ -1,17 +1,9 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import "./styles.css";
 
 export default function RelatedArticles({ articles = [] }) {
-  const router = useRouter();
-
   if (!Array.isArray(articles) || articles.length === 0) {
     return null;
-  }
-
-  function handleClick(blogId) {
-    router.push(`/articles/${blogId}`);
   }
 
   return (
@@ -20,13 +12,10 @@ export default function RelatedArticles({ articles = [] }) {
 
       <ul className="related-list">
         {articles.map((article) => (
-          <li
-            key={article.blog_id}
-            className="related-item"
-            onClick={() => handleClick(article.blog_id)}
-            style={{ cursor: "pointer" }}
-          >
-            {article.title}
+          <li key={article.blog_id} className="related-item">
+            <Link href={`/articles/${article.blog_id}`} prefetch>
+              {article.title}
+            </Link>
           </li>
         ))}
       </ul>

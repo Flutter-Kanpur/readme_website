@@ -27,8 +27,14 @@
   border-color: #d1d5db;
 }
 
-.custom-button-secondary:hover {
+.custom-button-secondary:hover:not(:disabled) {
   background-color: #f9fafb;
   border-color: #9ca3af;
   color: #000;
+}
+
+.custom-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }

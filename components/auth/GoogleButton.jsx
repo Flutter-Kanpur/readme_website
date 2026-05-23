@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { supabase } from "@/app/lib/supabase";
 
+const GOOGLE_ICON_SRC = "/assets/icons/google.svg";
+
 export default function GoogleButton({ disabled = false }) {
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
@@ -35,7 +37,13 @@ export default function GoogleButton({ disabled = false }) {
         opacity: disabled ? 0.6 : 1,
       }}
     >
-      <Image src="/google.png" alt="Google" width={20} height={20} />
+      <Image
+        src={GOOGLE_ICON_SRC}
+        alt=""
+        width={20}
+        height={20}
+        aria-hidden
+      />
       Continue with Google
     </button>
   );
