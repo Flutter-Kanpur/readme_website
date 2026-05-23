@@ -13,7 +13,7 @@ export function sanitizeCoverImage(cover) {
   return trimmed
 }
 
-function buildExcerpt(html, maxLength = 320) {
+export function buildExcerpt(html, maxLength = 320) {
   if (!html || typeof html !== 'string') return ''
   const text = html
     .replace(/<[^>]*>/g, ' ')

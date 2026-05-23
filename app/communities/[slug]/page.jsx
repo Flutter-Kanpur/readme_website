@@ -8,7 +8,7 @@ import {
   getCommunityPublishedBlogs,
   getCommunityMemberCount,
 } from "@/app/lib/supabase/communities";
-import { sanitizeCoverImage } from "@/app/lib/supabase/queries";
+import { sanitizeCoverImage, buildExcerpt } from "@/app/lib/supabase/queries";
 import "../communities.css";
 
 export const revalidate = 60;
@@ -38,7 +38,7 @@ export default async function CommunityProfilePage({ params }) {
       logo_url: community.logo_url,
     },
     blog_coauthors: blog.blog_coauthors ?? [],
-    excerpt: "",
+    excerpt: buildExcerpt(blog.content),
   }));
 
   return (

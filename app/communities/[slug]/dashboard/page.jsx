@@ -25,6 +25,7 @@ import {
   COMMUNITY_ROLES,
   COMMUNITY_REQUEST_ROLES,
 } from '@/app/lib/supabase/communities';
+import CommunityLogoSettings from '@/app/components/CommunityLogoSettings';
 import '../../communities.css';
 
 export default function CommunityDashboardPage() {
@@ -297,6 +298,13 @@ export default function CommunityDashboardPage() {
                   </button>
                   <button
                     type="button"
+                    className={`community-dashboard__tab${tab === 'settings' ? ' community-dashboard__tab--active' : ''}`}
+                    onClick={() => setTab('settings')}
+                  >
+                    Settings
+                  </button>
+                  <button
+                    type="button"
                     className={`community-dashboard__tab${tab === 'members' ? ' community-dashboard__tab--active' : ''}`}
                     onClick={() => setTab('members')}
                   >
@@ -378,6 +386,19 @@ export default function CommunityDashboardPage() {
                     </div>
                   ))
                 )}
+              </div>
+            )}
+
+            {tab === 'settings' && isAdmin && community && (
+              <div className="community-dashboard__panel">
+                <CommunityLogoSettings
+                  communityId={community.id}
+                  communityName={community.name}
+                  initialLogoUrl={community.logo_url}
+                  onUpdated={(logoUrl) =>
+                    setCommunity((prev) => (prev ? { ...prev, logo_url: logoUrl } : prev))
+                  }
+                />
               </div>
             )}
 
