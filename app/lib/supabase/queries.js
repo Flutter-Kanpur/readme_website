@@ -101,9 +101,72 @@ export async function getAuthorByBlogId(blogId) {
 }
 
 
-export async function getBlogDetailByBlogId(blogId) {
-  console.log('Fetching blog with ID:', blogId)
+function mapProfileToAuthor(profile) {
+  if (!profile) return null
+  return {
+    authorId: profile.id,
+    name: profile.name,
+    avatar_url: profile.avatar_url,
+    headline: profile.headline,
+    bio: profile.bio,
+  }
+}
 
+/** Blog + author in one round-trip (replaces getBlogDetailByBlogId + getAuthorByBlogId on detail page). */
+export async function getArticleWithAuthor(blogId) {
+  if (!blogId) return null
+
+  const { data, error } = await supabase
+    .from('blogs')
+    .select(`
+      blog_id,
+      title,
+      content,
+      created_at,
+      cover_image,
+      category,
+      is_published,
+      author_id,
+      profiles (
+        id,
+        name,
+        avatar_url,
+        headline,
+        bio
+      )
+    `)
+    .eq('blog_id', blogId)
+    .eq('is_published', true)
+    .single()
+
+  if (error) {
+    console.error('getArticleWithAuthor error:', error.message, error.details)
+    return null
+  }
+
+  const { profiles, ...blog } = data
+  return {
+    blog: {
+      ...blog,
+      cover_image: sanitizeCoverImage(blog.cover_image),
+    },
+    author: mapProfileToAuthor(profiles),
+  }
+}
+
+/** Blog, author, and related articles (use getArticleWithAuthor + Suspense sidebar when streaming). */
+export async function getArticlePageData(blogId) {
+  const main = await getArticleWithAuthor(blogId)
+  if (!main) return null
+
+  const relatedArticles = main.blog.author_id
+    ? await getRelatedArticlesByAuthorId(main.blog.author_id, blogId)
+    : []
+
+  return { ...main, relatedArticles: relatedArticles ?? [] }
+}
+
+export async function getBlogDetailByBlogId(blogId) {
   const { data, error } = await supabase
     .from('blogs')
     .select(`

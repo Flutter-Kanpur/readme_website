@@ -1,29 +1,38 @@
-import React from 'react'
-import Image from 'next/image'
-import './styles.css'
+"use client";
 
-export default function ArticleCardAuthorInfo({author, createdAt, handleAuthorProfile}) {
-    return (
-        <div className='wrapper'>
-            <Image
-                src={author.avatar_url || '/avatar.jpg'}
-                alt="avatar"
-                width={48}
-                height={48}
-                className='avatar'
-                onClick={handleAuthorProfile}
-            />
+import Image from "next/image";
+import Link from "next/link";
+import "./styles.css";
 
-            <div>
-                <p className = 'name' onClick={handleAuthorProfile}>{author.name}</p>
-                {createdAt && (
-                        <div className="article-meta">
-                            <span>
-                                {new Date(createdAt).toDateString()}
-                            </span>
-                        </div>
-                    )}
-            </div>
-        </div>
-    )
+export default function ArticleCardAuthorInfo({ author, createdAt }) {
+  if (!author) return null;
+
+  const profileHref = author.authorId
+    ? `/profile/${author.authorId}`
+    : "#";
+
+  return (
+    <div className="wrapper">
+      <Link href={profileHref} className="article-author-avatar-link">
+        <Image
+          src={author.avatar_url || "/avatar.jpg"}
+          alt=""
+          width={48}
+          height={48}
+          className="avatar"
+        />
+      </Link>
+
+      <div>
+        <Link href={profileHref} className="name article-author-name-link">
+          {author.name}
+        </Link>
+        {createdAt && (
+          <div className="article-meta">
+            <span>{new Date(createdAt).toDateString()}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

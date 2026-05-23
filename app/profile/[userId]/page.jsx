@@ -5,16 +5,17 @@ import Navbar from '@/app/components/Navbar/Navbar'
 import ProfileHeader from '@/components/ProfileHeader/ProfileHeader'
 import UserStats from '@/components/UserStats/UserStats'
 import ArticleCard from '@/components/ArticleCard/ArticleCard'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   getProfileById,
   getPublishedBlogsByAuthor,
   getAuthorByBlogId
 } from '@/app/lib/supabase/queries'
-import { supabase } from '@/app/lib/supabase/index'
+import { getSafeUser } from '@/app/lib/supabase/auth'
+import { getFollowStats } from '@/app/lib/supabase/follows'
+import useFollowAuthor from '@/app/hooks/useFollowAuthor'
 import CustomButton from '@/components/Button/CustomButton'
 import Footer from '@/components/Footer/Footer'
-// import Footer from "../../components/Footer/Footer";
 import './styles.css'
 
 export default function ProfilePage() {
@@ -23,9 +24,29 @@ export default function ProfilePage() {
   const [blogs, setBlogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [loggedInUser, setLoggedInUser] = useState(null)
+  const [followStats, setFollowStats] = useState({ followers: 0, following: 0 })
 
   const router = useRouter()
-  const handleClick = () => {
+
+  const refreshFollowStats = useCallback(async () => {
+    if (!userId) return
+    try {
+      const stats = await getFollowStats(userId)
+      setFollowStats(stats)
+    } catch (err) {
+      console.error('Follow stats error:', err)
+    }
+  }, [userId])
+
+  const {
+    isFollowing,
+    isLoading: followStateLoading,
+    isSelf,
+    actionLoading,
+    toggleFollow,
+  } = useFollowAuthor(userId, { onStatsChange: refreshFollowStats })
+
+  const handleEditProfile = () => {
     router.push(`/profile/${userId}/editprofile`)
   }
 
@@ -41,7 +62,11 @@ export default function ProfilePage() {
 
         setProfile(profileData)
 
-        const blogsData = await getPublishedBlogsByAuthor(profileData.id)
+        const [blogsData, user] = await Promise.all([
+          getPublishedBlogsByAuthor(profileData.id),
+          getSafeUser(),
+          refreshFollowStats(),
+        ])
 
         const blogsWithAuthors = await Promise.all(
           blogsData.map(async (blog) => {
@@ -54,14 +79,7 @@ export default function ProfilePage() {
         )
 
         setBlogs(blogsWithAuthors)
-
-        const {
-          data: { user }
-        } = await supabase.auth.getUser()
-
         setLoggedInUser(user)
-
-
       } catch (err) {
         console.error('Profile load error:', err)
       } finally {
@@ -70,7 +88,8 @@ export default function ProfilePage() {
     }
 
     loadProfile()
-  }, [userId])
+  }, [userId, refreshFollowStats])
+
   if (!userId) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
@@ -127,14 +146,26 @@ export default function ProfilePage() {
           <ProfileHeader profile={profile} />
           <div className="profileActions">
             {loggedInUser && loggedInUser.id === profile.id && (
-              <CustomButton handleClick={handleClick} variant="secondary">
+              <CustomButton handleClick={handleEditProfile} variant="secondary">
                 Edit Profile
+              </CustomButton>
+            )}
+            {!followStateLoading && !isSelf && (
+              <CustomButton
+                handleClick={toggleFollow}
+                variant={isFollowing ? 'secondary' : 'primary'}
+                disabled={actionLoading}
+              >
+                {actionLoading
+                  ? 'Updating…'
+                  : isFollowing
+                    ? 'Following'
+                    : 'Follow'}
               </CustomButton>
             )}
           </div>
         </div>
         <div className="blogsarea">
-          {/* Articles */}
           <div>
             <h2 className="sectionTitle">Published</h2>
 
@@ -147,18 +178,18 @@ export default function ProfilePage() {
                 <div key={blog.blog_id} style={{ position: 'relative' }}>
                   <ArticleCard blog={blog} />
                   {loggedInUser && loggedInUser.id === profile.id && (
-                    <Link 
+                    <Link
                       href={`/edit/${blog.blog_id}`}
-                      style={{ 
-                        position: 'absolute', 
-                        top: 24, 
-                        right: 24, 
-                        background: '#111827', 
-                        color: '#fff', 
-                        padding: '6px 14px', 
-                        borderRadius: '20px', 
-                        textDecoration: 'none', 
-                        fontSize: '12px', 
+                      style={{
+                        position: 'absolute',
+                        top: 24,
+                        right: 24,
+                        background: '#111827',
+                        color: '#fff',
+                        padding: '6px 14px',
+                        borderRadius: '20px',
+                        textDecoration: 'none',
+                        fontSize: '12px',
                         fontWeight: 'bold',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                         zIndex: 10
@@ -172,9 +203,13 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="sidebar">
-            <UserStats profile={profile} />
+            <UserStats
+              profile={profile}
+              articleCount={blogs.length}
+              followers={followStats.followers}
+              following={followStats.following}
+            />
           </div>
         </div>
       </div>

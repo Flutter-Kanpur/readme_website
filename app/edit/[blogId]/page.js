@@ -5,6 +5,7 @@ import Editor from "../../components/Editor";
 import ArticleSettings from "../../components/ArticleSettings";
 import Navbar from '../../components/Navbar/Navbar';
 import { supabase } from "@/app/lib/supabase";
+import { getSafeUser } from "@/app/lib/supabase/auth";
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
 import '@/app/write/write.css';
 import { useRouter } from 'next/navigation';
@@ -29,8 +30,8 @@ export default function EditPage({ params }) {
   });
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setIsAuthenticated(!!data?.user);
+    getSafeUser().then((user) => {
+      setIsAuthenticated(!!user);
     });
 
     const fetchBlog = async () => {
@@ -87,8 +88,8 @@ export default function EditPage({ params }) {
         return;
       }
 
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const user = await getSafeUser();
+      if (!user) {
         setMessage('You must be logged in to update blogs');
         setSaving(false); setPublishing(false);
         return;

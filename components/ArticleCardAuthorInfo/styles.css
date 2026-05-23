@@ -20,8 +20,15 @@
   cursor: pointer;
 }
 
-.name:hover {
+.name:hover,
+.article-author-name-link:hover {
   color: #2563eb;
+}
+
+.article-author-avatar-link,
+.article-author-name-link {
+  text-decoration: none;
+  color: inherit;
 }
 
 .article-meta {

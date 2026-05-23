@@ -5,6 +5,7 @@ import Editor from "../components/Editor";
 import ArticleSettings from "../components/ArticleSettings";
 import Navbar from '../components/Navbar/Navbar';
 import { supabase } from "@/app/lib/supabase";
+import { getSafeUser } from "@/app/lib/supabase/auth";
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
 import './write.css';
 
@@ -50,8 +51,8 @@ export default function WritePage() {
       return false;
     }
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
+    const user = await getSafeUser();
+    if (!user) {
       setMessage('You must be logged in');
       return false;
     }

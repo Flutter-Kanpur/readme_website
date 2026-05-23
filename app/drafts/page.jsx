@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar/Navbar';
 import { supabase } from '@/app/lib/supabase/index';
+import { getSafeUser } from '@/app/lib/supabase/auth';
 import './drafts.css';
 
 export default function DraftsPage() {
@@ -16,9 +17,9 @@ export default function DraftsPage() {
     const loadDrafts = async () => {
       try {
         // Check if user is authenticated
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        if (userError || !user) {
+        const user = await getSafeUser();
+
+        if (!user) {
           router.push('/login');
           return;
         }

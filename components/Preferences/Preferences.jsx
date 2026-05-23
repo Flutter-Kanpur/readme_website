@@ -2,6 +2,7 @@
 import './styles.css'
 import { useState } from 'react'
 import { supabase } from '@/app/lib/supabase/index'
+import { getSafeUser } from '@/app/lib/supabase/auth'
 
 export default function PreferencesCard({ profile }) {
 
@@ -10,10 +11,9 @@ export default function PreferencesCard({ profile }) {
     if (!confirm('Deactivate your account?')) return
 
     setLoading(true)
-    const { data: { user }, error: authError } =
-      await supabase.auth.getUser();
+    const user = await getSafeUser();
 
-    if (authError || !user) {
+    if (!user) {
       alert('Not authenticated');
       setLoading(false);
       return;
