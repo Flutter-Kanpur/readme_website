@@ -292,6 +292,7 @@ export async function getCommunityPublishedBlogs(communityId) {
     .select(`
       blog_id,
       title,
+      content,
       created_at,
       cover_image,
       category,
