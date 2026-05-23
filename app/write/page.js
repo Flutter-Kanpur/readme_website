@@ -1,11 +1,17 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Editor from "../components/Editor";
 import ArticleSettings from "../components/ArticleSettings";
+import CommunityPublishSettings from "../components/CommunityPublishSettings";
 import Navbar from '../components/Navbar/Navbar';
 import { supabase } from "@/app/lib/supabase";
 import { getSafeUser } from "@/app/lib/supabase/auth";
+import {
+  getUserCommunities,
+  syncBlogCoauthors,
+  canPublishInCommunity,
+} from "@/app/lib/supabase/communities";
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
 import './write.css';
 
@@ -14,14 +20,11 @@ export default function WritePage() {
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState('');
-  // Track the blog row id once we've inserted it. Subsequent Save / Publish
-  // clicks UPDATE this row instead of inserting a new one — that's what
-  // prevents duplicate draft entries when the user clicks Save Draft twice.
   const [draftId, setDraftId] = useState(null);
+  const [communities, setCommunities] = useState([]);
+  const [communityId, setCommunityId] = useState(null);
+  const [coAuthorIds, setCoAuthorIds] = useState([]);
 
-  // Combined "in-flight" flag — used to disable BOTH buttons during any
-  // async write, so the user can't Publish while a Save Draft is pending
-  // (and vice versa).
   const busy = saving || publishing;
 
   const editorDataRef = useRef({
@@ -29,15 +32,31 @@ export default function WritePage() {
     content: '',
     category: 'Technology',
     tags: [],
-    coverImage: null
+    coverImage: null,
   });
+
+  const selectedCommunity = communities.find((c) => c.id === communityId);
+  const canPublishCommunity =
+    !communityId || canPublishInCommunity(selectedCommunity?.role);
+
+  useEffect(() => {
+    getSafeUser().then((user) => {
+      if (!user) return;
+      getUserCommunities(user.id)
+        .then(setCommunities)
+        .catch((err) => console.error('Load communities error:', err));
+    });
+  }, []);
 
   const updateEditorData = (data) => {
     editorDataRef.current = { ...editorDataRef.current, ...data };
   };
 
-  // Shared write helper — INSERTs the first time, UPDATEs every time after.
-  // Returns true on success so callers can drive their own UI feedback.
+  const handleCommunityChange = useCallback(({ communityId: nextId, coAuthorIds: nextCoAuthors }) => {
+    setCommunityId(nextId);
+    setCoAuthorIds(nextCoAuthors ?? []);
+  }, []);
+
   const persistBlog = async ({ isPublished }) => {
     const { title, content, category, coverImage, tags } = editorDataRef.current;
 
@@ -48,6 +67,11 @@ export default function WritePage() {
 
     if (isPublished && !content.trim()) {
       setMessage('Please add some content');
+      return false;
+    }
+
+    if (isPublished && communityId && !canPublishCommunity) {
+      setMessage('Only editors and admins can publish for this community. Save as draft instead.');
       return false;
     }
 
@@ -66,7 +90,10 @@ export default function WritePage() {
       tags,
       cover_image,
       is_published: isPublished,
+      community_id: communityId || null,
     };
+
+    let blogId = draftId;
 
     if (draftId) {
       const { error } = await supabase
@@ -82,9 +109,11 @@ export default function WritePage() {
         .select('blog_id')
         .single();
       if (error) throw error;
+      blogId = data.blog_id;
       setDraftId(data.blog_id);
     }
 
+    await syncBlogCoauthors(blogId, coAuthorIds, user.id);
     return true;
   };
 
@@ -148,6 +177,12 @@ export default function WritePage() {
         </div>
 
         <div className="write-sidebar">
+          <CommunityPublishSettings
+            communities={communities}
+            communityId={communityId}
+            coAuthorIds={coAuthorIds}
+            onChange={handleCommunityChange}
+          />
           <ArticleSettings onDataChange={updateEditorData} />
         </div>
       </div>
@@ -160,7 +195,7 @@ export default function WritePage() {
             </span>
           )}
           <div className="write-buttons">
-            <button 
+            <button
               onClick={handleSaveDraft}
               disabled={busy}
               aria-busy={saving}
@@ -168,11 +203,16 @@ export default function WritePage() {
             >
               {saving ? 'Saving...' : draftId ? 'Update Draft' : 'Save Draft'}
             </button>
-            <button 
+            <button
               onClick={handlePublish}
-              disabled={busy}
+              disabled={busy || (communityId && !canPublishCommunity)}
               aria-busy={publishing}
               className="write-publish-btn"
+              title={
+                communityId && !canPublishCommunity
+                  ? 'Contributors can only save drafts for communities'
+                  : undefined
+              }
             >
               {publishing ? 'Publishing...' : 'Publish'}
             </button>

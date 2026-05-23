@@ -2,11 +2,16 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { X, Upload } from 'lucide-react';
+import { normalizeTags } from '@/app/lib/normalizeTags';
 import './ArticleSettings.css';
 
 export default function ArticleSettings({ onDataChange, initialData }) {
   const [category, setCategory] = useState(initialData?.category || 'Technology');
-  const [tags, setTags] = useState(initialData?.tags || ['JavaScript', 'Web Development']);
+  const [tags, setTags] = useState(() =>
+    initialData !== undefined
+      ? normalizeTags(initialData.tags)
+      : ['JavaScript', 'Web Development'],
+  );
   const [tagInput, setTagInput] = useState('');
   const [featuredImage, setFeaturedImage] = useState(initialData?.coverImage || null);
   const imageInputRef = useRef(null);
