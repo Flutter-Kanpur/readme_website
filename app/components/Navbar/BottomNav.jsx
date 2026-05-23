@@ -26,9 +26,9 @@ export default function BottomNav({ user, pathname }) {
     },
     {
       label: "Community",
-      href: "/writers",
+      href: "/communities",
       icon: Users,
-      isActive: pathname?.startsWith("/writers"),
+      isActive: pathname?.startsWith("/communities") || pathname?.startsWith("/writers"),
     },
     {
       label: "Explore",

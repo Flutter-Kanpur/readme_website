@@ -1,6 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
 
+function getAuthorLine(article) {
+  const primary = article.profiles?.name || "Anonymous";
+  const coNames = (article.blog_coauthors ?? [])
+    .map((row) => row.profiles?.name)
+    .filter(Boolean);
+
+  if (coNames.length === 0) return primary;
+  return `${primary}, ${coNames.join(", ")}`;
+}
+
 export default function ArticleCard({ article }) {
   if (!article) return null;
 
@@ -17,42 +27,62 @@ export default function ArticleCard({ article }) {
     cover_image,
     category = "General",
     profiles,
+    communities,
+    blog_coauthors = [],
   } = article;
 
   const preview =
     excerpt || htmlToText(content).slice(0, 320).trim();
 
-  const author = profiles?.name || "Anonymous";
+  const authorLine = getAuthorLine({ profiles, blog_coauthors });
   const authorAvatar =
     profiles?.avatar_url && profiles.avatar_url.trim() !== ""
       ? profiles.avatar_url
-      : "/avatar.jpg"; 
+      : "/avatar.jpg";
   const coverImage =
     cover_image && cover_image.trim() !== "" ? cover_image : null;
+  const community = communities;
 
   return (
     <Link href={`/articles/${blog_id}`} className="block transition-all hover:scale-[1.01] active:scale-[0.99] group">
       <div className="bg-white p-6 md:p-8 rounded-[28px] border border-gray-200 shadow-sm flex flex-col-reverse md:flex-row justify-between gap-6 md:gap-12 transition-all hover:border-gray-300 hover:shadow-md">
-        
+
         <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {community?.slug && (
+              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                {community.logo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={community.logo_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                ) : null}
+                {community.name}
+              </span>
+            )}
+            <span className="text-[10px] uppercase tracking-wider text-blue-500 font-bold">{category}</span>
+          </div>
+
           <div className="flex items-center gap-3 mb-4">
             <Image
               src={authorAvatar}
-              alt={author}
+              alt={authorLine}
               width={36}
               height={36}
               className="rounded-full object-cover ring-2 ring-gray-100"
             />
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-black leading-none mb-0.5">{author}</span>
-              <span className="text-[10px] uppercase tracking-wider text-blue-500 font-bold">{category}</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-semibold text-black leading-snug truncate">{authorLine}</span>
+              {blog_coauthors.length > 0 && (
+                <span className="text-[10px] text-gray-400">
+                  {1 + blog_coauthors.length} authors
+                </span>
+              )}
             </div>
           </div>
 
           <h3 className="text-xl md:text-2xl font-bold mb-3 text-black group-hover:text-blue-600 transition-colors leading-snug">
             {title}
           </h3>
-          
+
           <p className="text-sm md:text-base text-gray-500 line-clamp-3 md:line-clamp-2 leading-relaxed">
             {preview || "No description available."}
           </p>

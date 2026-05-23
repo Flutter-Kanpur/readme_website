@@ -116,9 +116,64 @@ function mapProfileToAuthor(profile) {
 export async function getArticleWithAuthor(blogId) {
   if (!blogId) return null
 
-  const { data, error } = await supabase
-    .from('blogs')
-    .select(`
+  try {
+    return await fetchArticleWithAuthor(blogId, true)
+  } catch (error) {
+    const msg = error?.message?.toLowerCase() ?? ''
+    if (
+      msg.includes('communities') ||
+      msg.includes('blog_coauthors') ||
+      msg.includes('schema cache')
+    ) {
+      try {
+        return await fetchArticleWithAuthor(blogId, false)
+      } catch (fallbackError) {
+        console.error('getArticleWithAuthor fallback error:', fallbackError?.message ?? fallbackError)
+        return null
+      }
+    }
+    console.error('getArticleWithAuthor error:', error?.message ?? error)
+    return null
+  }
+}
+
+async function fetchArticleWithAuthor(blogId, withCommunity) {
+  const selectFields = withCommunity
+    ? `
+      blog_id,
+      title,
+      content,
+      created_at,
+      cover_image,
+      category,
+      is_published,
+      author_id,
+      community_id,
+      profiles (
+        id,
+        name,
+        avatar_url,
+        headline,
+        bio
+      ),
+      communities (
+        id,
+        name,
+        slug,
+        logo_url
+      ),
+      blog_coauthors (
+        user_id,
+        profiles (
+          id,
+          name,
+          avatar_url,
+          headline,
+          bio
+        )
+      )
+    `
+    : `
       blog_id,
       title,
       content,
@@ -134,23 +189,34 @@ export async function getArticleWithAuthor(blogId) {
         headline,
         bio
       )
-    `)
+    `
+
+  const { data, error } = await supabase
+    .from('blogs')
+    .select(selectFields)
     .eq('blog_id', blogId)
     .eq('is_published', true)
     .single()
 
   if (error) {
-    console.error('getArticleWithAuthor error:', error.message, error.details)
-    return null
+    throw error
   }
 
-  const { profiles, ...blog } = data
+  const { profiles, communities, blog_coauthors, ...blog } = data
+  const author = mapProfileToAuthor(profiles)
+  const coauthors = (blog_coauthors ?? [])
+    .map((row) => mapProfileToAuthor(row.profiles))
+    .filter(Boolean)
+    .filter((profile) => profile.authorId !== author?.authorId)
+
   return {
     blog: {
       ...blog,
       cover_image: sanitizeCoverImage(blog.cover_image),
     },
-    author: mapProfileToAuthor(profiles),
+    author,
+    coauthors,
+    community: withCommunity ? (communities ?? null) : null,
   }
 }
 
@@ -220,9 +286,50 @@ export async function getRelatedArticlesByAuthorId(authorId, currentBlogId) {
 
 
 export async function getLatestArticle(category = "for_you") {
-  let query = supabase
-    .from("blogs")
-    .select(`
+  try {
+    return await fetchLatestArticles(category, true);
+  } catch (error) {
+    const msg = error?.message?.toLowerCase() ?? "";
+    if (
+      msg.includes("communities") ||
+      msg.includes("blog_coauthors") ||
+      msg.includes("schema cache")
+    ) {
+      return fetchLatestArticles(category, false);
+    }
+    throw error;
+  }
+}
+
+async function fetchLatestArticles(category, withCommunity) {
+  const selectFields = withCommunity
+    ? `
+      blog_id,
+      title,
+      created_at,
+      cover_image,
+      category,
+      community_id,
+      profiles (
+        name,
+        avatar_url
+      ),
+      communities (
+        id,
+        name,
+        slug,
+        logo_url
+      ),
+      blog_coauthors (
+        user_id,
+        profiles (
+          id,
+          name,
+          avatar_url
+        )
+      )
+    `
+    : `
       blog_id,
       title,
       created_at,
@@ -232,11 +339,17 @@ export async function getLatestArticle(category = "for_you") {
         name,
         avatar_url
       )
-    `)
+    `;
+
+  let query = supabase
+    .from("blogs")
+    .select(selectFields)
     .eq("is_published", true)
     .order("created_at", { ascending: false });
 
-  if (category !== "for_you") {
+  if (category === "communities") {
+    query = query.not("community_id", "is", null);
+  } else if (category !== "for_you") {
     query = query.eq("category", category);
   }
 
@@ -263,7 +376,10 @@ export async function getLatestArticle(category = "for_you") {
     created_at: blog.created_at,
     cover_image: sanitizeCoverImage(blog.cover_image),
     category: blog.category,
+    community_id: blog.community_id ?? null,
     profiles: blog.profiles,
+    communities: blog.communities ?? null,
+    blog_coauthors: blog.blog_coauthors ?? [],
     excerpt: buildExcerpt(contentById[blog.blog_id]),
   }));
 }

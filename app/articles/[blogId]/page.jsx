@@ -21,7 +21,13 @@ export default async function ArticlePage({ params }) {
     notFound();
   }
 
-  const { blog, author } = data;
+  const { blog, author, coauthors = [], community } = data;
+
+  const allAuthors = [author, ...coauthors].filter(
+    (profile, index, list) =>
+      profile?.authorId &&
+      list.findIndex((item) => item.authorId === profile.authorId) === index,
+  );
 
   return (
     <div className="article-page">
@@ -33,7 +39,12 @@ export default async function ArticlePage({ params }) {
             <h1 className="article-title">{blog.title}</h1>
 
             {author && (
-              <ArticleCardAuthorInfo author={author} createdAt={blog.created_at} />
+              <ArticleCardAuthorInfo
+                author={author}
+                coauthors={coauthors}
+                community={community}
+                createdAt={blog.created_at}
+              />
             )}
 
             {blog.cover_image && (
@@ -56,7 +67,7 @@ export default async function ArticlePage({ params }) {
           </article>
 
           <aside className="article-sidebar">
-            <AuthorCardSection author={author} authorId={blog.author_id} />
+            <AuthorCardSection authors={allAuthors} />
             <Suspense fallback={<RelatedArticlesSidebarSkeleton />}>
               <RelatedArticlesSection
                 authorId={blog.author_id}

@@ -274,6 +274,16 @@
   box-shadow: none;
 }
 
+.article-page .article-authors-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
 .article-page .article-sidebar .author-card {
   border: 1px solid #e5e7eb;
   border-radius: 20px;
