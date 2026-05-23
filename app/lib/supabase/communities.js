@@ -33,6 +33,23 @@ export async function getCommunityBySlug(slug) {
   return data;
 }
 
+export async function updateCommunityLogo(communityId, logoUrl) {
+  if (!communityId) throw new Error('Community ID required');
+
+  const { data, error } = await supabase
+    .from('communities')
+    .update({
+      logo_url: logoUrl,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', communityId)
+    .select('logo_url')
+    .single();
+
+  if (error) throw error;
+  return data.logo_url;
+}
+
 export async function listCommunities() {
   const { data, error } = await supabase
     .from('communities')
