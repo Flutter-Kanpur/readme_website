@@ -10,6 +10,7 @@ Run each SQL file once in the [Supabase SQL editor](https://supabase.com/dashboa
 | `migrations/004_blog_covers_bucket.sql` | `blog-covers` storage bucket + upload policies |
 | `migrations/005_blog_covers_size_limit.sql` | Raise cover bucket size limit to 10 MB |
 | `migrations/006_community_join_requests.sql` | Admin-approved join requests (replaces self-join) |
+| `migrations/007_community_logos_bucket.sql` | `community-logos` storage bucket for community icons |
 
 After each migration: **Settings → API → Reload schema**.
 
