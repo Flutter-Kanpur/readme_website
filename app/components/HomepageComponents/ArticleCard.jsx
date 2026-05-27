@@ -35,10 +35,18 @@ export default function ArticleCard({ article }) {
     excerpt || htmlToText(content).slice(0, 320).trim();
 
   const authorLine = getAuthorLine({ profiles, blog_coauthors });
-  const authorAvatar =
-    profiles?.avatar_url && profiles.avatar_url.trim() !== ""
-      ? profiles.avatar_url
-      : "/avatar.jpg";
+  const allAuthors = [
+    {
+      name: profiles?.name,
+      avatar: profiles?.avatar_url,
+    },
+    ...blog_coauthors.map((row) => ({
+      name: row.profiles?.name,
+      avatar: row.profiles?.avatar_url,
+    })),
+  ].filter((author) => author.name);
+  const visibleAuthors = allAuthors.slice(0, 3);
+  const extraAuthorCount = Math.max(0, allAuthors.length - visibleAuthors.length);
   const coverImage =
     cover_image && cover_image.trim() !== "" ? cover_image : null;
   const community = communities;
@@ -62,13 +70,31 @@ export default function ArticleCard({ article }) {
           </div>
 
           <div className="flex items-center gap-3 mb-4">
-            <Image
-              src={authorAvatar}
-              alt={authorLine}
-              width={36}
-              height={36}
-              className="rounded-full object-cover ring-2 ring-gray-100"
-            />
+            <div className="flex items-center -space-x-2 shrink-0">
+              {visibleAuthors.map((author, idx) => (
+                <Image
+                  key={`${author.name}-${idx}`}
+                  src={
+                    author.avatar && author.avatar.trim() !== ""
+                      ? author.avatar
+                      : "/avatar.jpg"
+                  }
+                  alt={author.name || ""}
+                  width={36}
+                  height={36}
+                  className="rounded-full object-cover ring-2 ring-white bg-gray-100"
+                  style={{ zIndex: visibleAuthors.length - idx }}
+                />
+              ))}
+              {extraAuthorCount > 0 && (
+                <span
+                  className="flex items-center justify-center rounded-full bg-gray-100 text-[10px] font-semibold text-gray-600 ring-2 ring-white"
+                  style={{ width: 36, height: 36 }}
+                >
+                  +{extraAuthorCount}
+                </span>
+              )}
+            </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-semibold text-black leading-snug truncate">{authorLine}</span>
               {blog_coauthors.length > 0 && (

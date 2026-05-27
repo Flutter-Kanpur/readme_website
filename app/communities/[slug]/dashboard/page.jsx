@@ -1,11 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/app/components/Navbar/Navbar';
 import Footer from '@/components/Footer/Footer';
 import { getSafeUser } from '@/app/lib/supabase/auth';
+import { supabase } from '@/app/lib/supabase';
+import {
+  uploadCommunityNewsletterFile,
+  formatFileSize,
+} from '@/app/lib/uploadCommunityNewsletter';
 import {
   getCommunityBySlug,
   getCommunityMembers,
@@ -22,6 +27,11 @@ import {
   updateCommunityMemberRole,
   removeCommunityMember,
   findProfileByName,
+  getCommunityNewsletters,
+  createCommunityNewsletter,
+  deleteCommunityNewsletter,
+  getCommunityNewsletterSubscriberCount,
+  canPublishNewsletter,
   COMMUNITY_ROLES,
   COMMUNITY_REQUEST_ROLES,
 } from '@/app/lib/supabase/communities';
@@ -35,6 +45,8 @@ export default function CommunityDashboardPage() {
   const [members, setMembers] = useState([]);
   const [drafts, setDrafts] = useState([]);
   const [joinRequests, setJoinRequests] = useState([]);
+  const [newsletters, setNewsletters] = useState([]);
+  const [subscriberCount, setSubscriberCount] = useState(0);
   const [myRole, setMyRole] = useState(null);
   const [pendingRequest, setPendingRequest] = useState(null);
   const [tab, setTab] = useState('drafts');
@@ -42,20 +54,30 @@ export default function CommunityDashboardPage() {
   const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState('contributor');
   const [requestRole, setRequestRole] = useState('contributor');
+  const [newsletterTitle, setNewsletterTitle] = useState('');
+  const [newsletterBody, setNewsletterBody] = useState('');
+  const [newsletterFile, setNewsletterFile] = useState(null);
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const newsletterFileInputRef = useRef(null);
 
   const isAdmin = myRole === 'admin';
+  const canWriteNewsletter = canPublishNewsletter(myRole);
 
-  async function reload(communityId, admin) {
-    const [memberRows, draftRows, requestRows] = await Promise.all([
+  async function reload(communityId, admin, role) {
+    const editorOrAdmin = canPublishNewsletter(role);
+    const [memberRows, draftRows, requestRows, newsletterRows, subCount] = await Promise.all([
       getCommunityMembers(communityId),
       getCommunityDrafts(communityId),
       admin ? getCommunityJoinRequests(communityId) : Promise.resolve([]),
+      editorOrAdmin ? getCommunityNewsletters(communityId, { limit: 20 }) : Promise.resolve([]),
+      admin ? getCommunityNewsletterSubscriberCount(communityId) : Promise.resolve(0),
     ]);
     setMembers(memberRows);
     setDrafts(draftRows);
     setJoinRequests(requestRows);
+    setNewsletters(newsletterRows);
+    setSubscriberCount(subCount);
   }
 
   useEffect(() => {
@@ -92,7 +114,7 @@ export default function CommunityDashboardPage() {
 
         setMyRole(role);
         setPendingRequest(null);
-        await reload(data.id, role === 'admin');
+        await reload(data.id, role === 'admin', role);
       } catch (err) {
         console.error(err);
         setMessage(err.message || 'Failed to load dashboard.');
@@ -139,7 +161,7 @@ export default function CommunityDashboardPage() {
     setMessage('');
     try {
       await approveJoinRequest(requestId, role);
-      await reload(community.id, true);
+      await reload(community.id, true, 'admin');
       setMessage('Join request approved.');
     } catch (err) {
       setMessage(err.message || 'Could not approve request.');
@@ -151,7 +173,7 @@ export default function CommunityDashboardPage() {
     setMessage('');
     try {
       await rejectJoinRequest(requestId);
-      await reload(community.id, true);
+      await reload(community.id, true, 'admin');
       setMessage('Join request rejected.');
     } catch (err) {
       setMessage(err.message || 'Could not reject request.');
@@ -170,7 +192,7 @@ export default function CommunityDashboardPage() {
       }
       await addCommunityMember(community.id, profile.id, inviteRole);
       setInviteName('');
-      await reload(community.id, true);
+      await reload(community.id, true, 'admin');
       setMessage(`Added ${profile.name} as ${inviteRole}.`);
     } catch (err) {
       setMessage(err.message || 'Invite failed.');
@@ -181,7 +203,7 @@ export default function CommunityDashboardPage() {
     if (!community || !isAdmin) return;
     try {
       await updateCommunityMemberRole(membershipId, role);
-      await reload(community.id, true);
+      await reload(community.id, true, 'admin');
     } catch (err) {
       setMessage(err.message || 'Could not update role.');
     }
@@ -192,9 +214,81 @@ export default function CommunityDashboardPage() {
     if (!confirm('Remove this member?')) return;
     try {
       await removeCommunityMember(membershipId);
-      await reload(community.id, true);
+      await reload(community.id, true, 'admin');
     } catch (err) {
       setMessage(err.message || 'Could not remove member.');
+    }
+  };
+
+  const handleNewsletterFileChange = (e) => {
+    const file = e.target.files?.[0] ?? null;
+    setNewsletterFile(file);
+  };
+
+  const clearNewsletterFile = () => {
+    setNewsletterFile(null);
+    if (newsletterFileInputRef.current) {
+      newsletterFileInputRef.current.value = '';
+    }
+  };
+
+  const handlePublishNewsletter = async (e) => {
+    e.preventDefault();
+    if (!community || !canWriteNewsletter) return;
+    if (submitting) return;
+
+    if (!newsletterTitle.trim()) {
+      setMessage('Add a title before publishing.');
+      return;
+    }
+    if (!newsletterBody.trim() && !newsletterFile) {
+      setMessage('Add a body or attach a file before publishing.');
+      return;
+    }
+
+    setSubmitting(true);
+    setMessage('');
+    try {
+      let uploaded = null;
+      if (newsletterFile) {
+        uploaded = await uploadCommunityNewsletterFile(
+          newsletterFile,
+          community.id,
+          supabase,
+        );
+      }
+
+      await createCommunityNewsletter({
+        communityId: community.id,
+        title: newsletterTitle,
+        body: newsletterBody,
+        fileUrl: uploaded?.url,
+        fileName: uploaded?.name,
+        fileSizeBytes: uploaded?.size,
+      });
+
+      setNewsletterTitle('');
+      setNewsletterBody('');
+      clearNewsletterFile();
+      await reload(community.id, isAdmin, myRole);
+      setMessage('Newsletter published.');
+    } catch (err) {
+      setMessage(err.message || 'Could not publish newsletter.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteNewsletter = async (newsletterId) => {
+    if (!community || !isAdmin) return;
+    if (!confirm('Delete this newsletter? This cannot be undone.')) return;
+    setMessage('');
+    try {
+      await deleteCommunityNewsletter(newsletterId);
+      await reload(community.id, true, myRole);
+      setMessage('Newsletter deleted.');
+    } catch (err) {
+      setMessage(err.message || 'Could not delete newsletter.');
     }
   };
 
@@ -287,6 +381,15 @@ export default function CommunityDashboardPage() {
               >
                 Drafts
               </button>
+              {canWriteNewsletter && (
+                <button
+                  type="button"
+                  className={`community-dashboard__tab${tab === 'newsletter' ? ' community-dashboard__tab--active' : ''}`}
+                  onClick={() => setTab('newsletter')}
+                >
+                  Newsletter{newsletters.length > 0 ? ` (${newsletters.length})` : ''}
+                </button>
+              )}
               {isAdmin && (
                 <>
                   <button
@@ -333,6 +436,145 @@ export default function CommunityDashboardPage() {
                         <Link href={`/edit/${draft.blog_id}`} className="community-profile__btn community-profile__btn--secondary">
                           Edit
                         </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {tab === 'newsletter' && canWriteNewsletter && (
+              <div className="community-dashboard__panel">
+                <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
+                  <h2 className="font-semibold">Monthly newsletter</h2>
+                  <span className="text-xs text-gray-500">
+                    {subscriberCount} subscriber{subscriberCount === 1 ? '' : 's'}
+                  </span>
+                </div>
+
+                <form onSubmit={handlePublishNewsletter} className="newsletter-compose">
+                  <label className="newsletter-compose__label" htmlFor="newsletter-title">
+                    Issue title
+                  </label>
+                  <input
+                    id="newsletter-title"
+                    type="text"
+                    placeholder="e.g. May 2026 — what we shipped"
+                    value={newsletterTitle}
+                    onChange={(e) => setNewsletterTitle(e.target.value)}
+                    required
+                    className="newsletter-compose__input"
+                  />
+
+                  <label className="newsletter-compose__label" htmlFor="newsletter-body">
+                    Body (optional if a file is attached)
+                  </label>
+                  <textarea
+                    id="newsletter-body"
+                    placeholder="Hi everyone,&#10;&#10;Here's what's been happening this month…"
+                    rows={10}
+                    value={newsletterBody}
+                    onChange={(e) => setNewsletterBody(e.target.value)}
+                    className="newsletter-compose__textarea"
+                  />
+                  <p className="text-xs text-gray-500 mb-3">
+                    Plain text. Separate paragraphs with a blank line — they'll render
+                    as paragraphs on the public archive page.
+                  </p>
+
+                  <label className="newsletter-compose__label">Attachment (optional)</label>
+                  <div className="newsletter-compose__file">
+                    <input
+                      ref={newsletterFileInputRef}
+                      id="newsletter-file"
+                      type="file"
+                      accept="application/pdf,image/png,image/jpeg"
+                      onChange={handleNewsletterFileChange}
+                      className="newsletter-compose__file-input"
+                    />
+                    <label
+                      htmlFor="newsletter-file"
+                      className="community-profile__btn community-profile__btn--secondary newsletter-compose__file-btn"
+                    >
+                      {newsletterFile ? 'Replace file' : 'Choose PDF or image'}
+                    </label>
+                    {newsletterFile && (
+                      <div className="newsletter-compose__file-info">
+                        <span className="newsletter-compose__file-name" title={newsletterFile.name}>
+                          {newsletterFile.name}
+                        </span>
+                        <span className="newsletter-compose__file-size">
+                          {formatFileSize(newsletterFile.size)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={clearNewsletterFile}
+                          className="text-sm text-red-600 hover:underline"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mb-3">
+                    PDF, PNG or JPEG up to 20 MB. Subscribers and visitors can download
+                    it from the newsletter page.
+                  </p>
+
+                  <div className="newsletter-compose__actions">
+                    <button
+                      type="submit"
+                      disabled={
+                        submitting ||
+                        !newsletterTitle.trim() ||
+                        (!newsletterBody.trim() && !newsletterFile)
+                      }
+                      className="community-profile__btn community-profile__btn--primary"
+                    >
+                      {submitting ? 'Publishing…' : 'Publish issue'}
+                    </button>
+                  </div>
+                </form>
+
+                <h3 className="font-semibold mt-6 mb-2 text-sm">Past issues</h3>
+                {newsletters.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No newsletters published yet.</p>
+                ) : (
+                  <ul className="list-none p-0 m-0">
+                    {newsletters.map((issue) => (
+                      <li key={issue.id} className="community-dashboard__row">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {issue.title}
+                            {issue.file_url && (
+                              <span className="newsletter-compose__chip" title={issue.file_name || 'attachment'}>
+                                📎 {issue.file_name || 'attachment'}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(issue.created_at).toLocaleDateString()}
+                            {issue.author?.name ? ` · ${issue.author.name}` : ''}
+                            {issue.file_size_bytes
+                              ? ` · ${formatFileSize(issue.file_size_bytes)}`
+                              : ''}
+                          </p>
+                        </div>
+                        <Link
+                          href={`/communities/${slug}/newsletters/${issue.id}`}
+                          className="community-profile__btn community-profile__btn--secondary"
+                        >
+                          View
+                        </Link>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteNewsletter(issue.id)}
+                            className="text-sm text-red-600 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>

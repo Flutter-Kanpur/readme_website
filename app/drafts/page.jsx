@@ -134,7 +134,7 @@ export default function DraftsPage() {
       <div className="drafts-container" style={{ position: 'relative', zIndex: 1 }}>
         <div className="drafts-header">
           <h1>My Drafts</h1>
-          <button 
+          <button
             onClick={() => router.push('/write')}
             className="new-draft-btn"
           >
@@ -144,8 +144,13 @@ export default function DraftsPage() {
 
         {drafts.length === 0 ? (
           <div className="no-drafts">
+            <img src="/assets/icons/empty.svg" alt="empty"
+              height={300}
+              width={300}
+              className="mx-auto"
+            />
             <p>You haven&apos;t started any stories yet.</p>
-            <button 
+            <button
               onClick={() => router.push('/write')}
               className="write-first-draft-btn"
             >
