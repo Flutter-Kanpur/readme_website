@@ -25,6 +25,7 @@ export default function EditPage({ params }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
   const [message, setMessage] = useState('');
   const [initialData, setInitialData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -90,6 +91,7 @@ export default function EditPage({ params }) {
 
   const updateEditorData = (data) => {
     editorDataRef.current = { ...editorDataRef.current, ...data };
+    if (published) setPublished(false);
   };
 
   const handleCommunityChange = useCallback(({ communityId: nextId, coAuthorIds: nextCoAuthors }) => {
@@ -108,8 +110,12 @@ export default function EditPage({ params }) {
       return;
     }
 
-    if (isPublished) setPublishing(true);
-    else setSaving(true);
+    if (isPublished) {
+      setPublishing(true);
+      setPublished(false);
+    } else {
+      setSaving(true);
+    }
 
     setMessage('');
 
@@ -155,6 +161,7 @@ export default function EditPage({ params }) {
 
       await syncBlogCoauthors(blogId, coAuthorIds, user.id);
 
+      if (isPublished) setPublished(true);
       setMessage(isPublished ? 'Updated & Published successfully!' : 'Draft updated successfully!');
       setTimeout(() => setMessage(''), 3000);
       if (isPublished) {
@@ -220,10 +227,11 @@ export default function EditPage({ params }) {
             </button>
             <button
               onClick={() => handleUpdate(true)}
-              disabled={publishing || loading || !initialData || (communityId && !canPublishCommunity)}
-              className="write-publish-btn"
+              disabled={publishing || published || loading || !initialData || (communityId && !canPublishCommunity)}
+              aria-busy={publishing}
+              className={`write-publish-btn${published ? ' write-publish-btn--published' : ''}`}
             >
-              {publishing ? 'Publishing...' : 'Update & Publish'}
+              {publishing ? 'Publishing...' : published ? 'Published ✓' : 'Update & Publish'}
             </button>
           </div>
         </div>

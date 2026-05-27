@@ -70,6 +70,23 @@
   cursor: not-allowed;
 }
 
+.write-publish-btn[aria-busy='true'] {
+  opacity: 0.85;
+  cursor: progress;
+}
+
+.write-publish-btn--published,
+.write-publish-btn--published:disabled {
+  background-color: rgb(22, 163, 74);
+  color: white;
+  opacity: 1;
+  cursor: default;
+}
+
+.write-publish-btn--published:hover {
+  background-color: rgb(22, 163, 74);
+}
+
 .write-content {
   display: flex;
   flex: 1;

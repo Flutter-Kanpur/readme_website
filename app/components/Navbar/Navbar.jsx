@@ -157,7 +157,7 @@ function UserProfile({ user, onSignOut, pathname, mounted }) {
   );
 }
 
-export default function Navbar() {
+export default function Navbar({ hideBottomNav = false } = {}) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -266,7 +266,7 @@ export default function Navbar() {
         </div>
       </nav>
     </header>
-    <BottomNav user={user} pathname={pathname} />
+    {!hideBottomNav && <BottomNav user={user} pathname={pathname} />}
     </>
   );
 }

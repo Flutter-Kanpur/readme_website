@@ -12,11 +12,17 @@ export function isCommunitiesUnavailable(error) {
   if (!error) return false;
   const code = error.code;
   const msg = (error.message || '').toLowerCase();
+  // Only treat as "feature not provisioned" when the table itself is missing
+  // or not yet in PostgREST's schema cache. Any other error (e.g. PGRST201
+  // ambiguous embed, RLS, etc.) must surface so we can fix it.
   return (
     code === 'PGRST205' ||
     code === '42P01' ||
-    msg.includes('communities') && msg.includes('schema cache') ||
-    msg.includes('community_join_requests')
+    (msg.includes('schema cache') &&
+      (msg.includes('communities') ||
+        msg.includes('community_members') ||
+        msg.includes('community_join_requests') ||
+        msg.includes('blog_coauthors')))
   );
 }
 
@@ -158,7 +164,7 @@ export async function getCommunityJoinRequests(communityId) {
       requested_role,
       status,
       created_at,
-      profiles (
+      profile:profiles!community_join_requests_user_id_fkey (
         id,
         name,
         avatar_url,
@@ -179,7 +185,7 @@ export async function getCommunityJoinRequests(communityId) {
     requestedRole: row.requested_role,
     status: row.status,
     createdAt: row.created_at,
-    profile: row.profiles,
+    profile: row.profile,
   }));
 }
 
@@ -447,4 +453,188 @@ export async function getCurrentUserCommunityRole(communityId) {
   const user = await getSafeUser();
   if (!user || !communityId) return null;
   return getCommunityMemberRole(communityId, user.id);
+}
+
+// ---------------------------------------------------------------------------
+// Newsletters
+// ---------------------------------------------------------------------------
+
+export function canPublishNewsletter(role) {
+  return role === 'admin' || role === 'editor';
+}
+
+const NEWSLETTER_SELECT = `
+  id,
+  title,
+  body,
+  file_url,
+  file_name,
+  file_size_bytes,
+  created_at,
+  author:profiles ( id, name, avatar_url )
+`;
+
+export async function getCommunityNewsletters(communityId, { limit } = {}) {
+  if (!communityId) return [];
+
+  let query = supabase
+    .from('community_newsletters')
+    .select(NEWSLETTER_SELECT)
+    .eq('community_id', communityId)
+    .order('created_at', { ascending: false });
+
+  if (typeof limit === 'number') query = query.limit(limit);
+
+  const { data, error } = await query;
+  if (error) {
+    if (isCommunitiesUnavailable(error)) return [];
+    throw error;
+  }
+  return data ?? [];
+}
+
+export async function getCommunityNewsletter(newsletterId) {
+  if (!newsletterId) return null;
+
+  const { data, error } = await supabase
+    .from('community_newsletters')
+    .select(`${NEWSLETTER_SELECT}, community_id`)
+    .eq('id', newsletterId)
+    .maybeSingle();
+
+  if (error) {
+    if (isCommunitiesUnavailable(error)) return null;
+    throw error;
+  }
+  return data;
+}
+
+export async function createCommunityNewsletter({
+  communityId,
+  title,
+  body,
+  fileUrl,
+  fileName,
+  fileSizeBytes,
+}) {
+  const user = await getSafeUser();
+  if (!user) throw new Error('NOT_AUTHENTICATED');
+
+  const trimmedTitle = title?.trim();
+  const trimmedBody = body?.trim();
+  const trimmedFileUrl = fileUrl?.trim();
+  if (!trimmedTitle) throw new Error('Title required');
+  if (!trimmedBody && !trimmedFileUrl) {
+    throw new Error('Add a body or attach a file before publishing.');
+  }
+
+  const role = await getCommunityMemberRole(communityId, user.id);
+  if (!canPublishNewsletter(role)) {
+    throw new Error('Only admins or editors can publish newsletters.');
+  }
+
+  const payload = {
+    community_id: communityId,
+    title: trimmedTitle,
+    body: trimmedBody || null,
+    file_url: trimmedFileUrl || null,
+    file_name: fileName?.trim() || null,
+    file_size_bytes: typeof fileSizeBytes === 'number' ? fileSizeBytes : null,
+    author_id: user.id,
+  };
+
+  const { data, error } = await supabase
+    .from('community_newsletters')
+    .insert(payload)
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return data.id;
+}
+
+export async function deleteCommunityNewsletter(newsletterId) {
+  const { error } = await supabase
+    .from('community_newsletters')
+    .delete()
+    .eq('id', newsletterId);
+  if (error) throw error;
+}
+
+export async function getMyNewsletterSubscription(communityId) {
+  if (!communityId) return null;
+  const user = await getSafeUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from('community_newsletter_subscribers')
+    .select('id, email, created_at')
+    .eq('community_id', communityId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (error) {
+    if (isCommunitiesUnavailable(error)) return null;
+    throw error;
+  }
+  return data;
+}
+
+export async function subscribeToNewsletter(communityId, providedEmail) {
+  if (!communityId) throw new Error('Community ID required');
+
+  const user = await getSafeUser();
+  const email = (providedEmail || user?.email || '').trim().toLowerCase();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error('Please enter a valid email.');
+  }
+
+  const payload = {
+    community_id: communityId,
+    user_id: user?.id ?? null,
+    email,
+  };
+
+  const { error } = await supabase
+    .from('community_newsletter_subscribers')
+    .insert(payload);
+
+  if (error) {
+    if (error.code === '23505') {
+      // already subscribed — treat as success
+      return { alreadySubscribed: true };
+    }
+    throw error;
+  }
+  return { alreadySubscribed: false };
+}
+
+export async function unsubscribeFromNewsletter(communityId) {
+  const user = await getSafeUser();
+  if (!user) throw new Error('NOT_AUTHENTICATED');
+  if (!communityId) throw new Error('Community ID required');
+
+  const { error } = await supabase
+    .from('community_newsletter_subscribers')
+    .delete()
+    .eq('community_id', communityId)
+    .eq('user_id', user.id);
+
+  if (error) throw error;
+}
+
+export async function getCommunityNewsletterSubscriberCount(communityId) {
+  if (!communityId) return 0;
+
+  const { count, error } = await supabase
+    .from('community_newsletter_subscribers')
+    .select('*', { count: 'exact', head: true })
+    .eq('community_id', communityId);
+
+  if (error) {
+    if (isCommunitiesUnavailable(error)) return 0;
+    throw error;
+  }
+  return count ?? 0;
 }

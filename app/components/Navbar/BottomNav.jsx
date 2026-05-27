@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Users, Search, User } from "lucide-react";
+import { Home, Users, Search, User, FileText } from "lucide-react";
 
 /**
  * Mobile bottom tab bar. Rendered by Navbar and gated to `md:hidden`,
@@ -36,6 +36,16 @@ export default function BottomNav({ user, pathname }) {
       icon: Search,
       isActive: pathname?.startsWith("/articles"),
     },
+    ...(user
+      ? [
+          {
+            label: "Drafts",
+            href: "/drafts",
+            icon: FileText,
+            isActive: pathname?.startsWith("/drafts"),
+          },
+        ]
+      : []),
     {
       label: "Profile",
       href: profileHref,

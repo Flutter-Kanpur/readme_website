@@ -19,6 +19,7 @@ export default function WritePage() {
   const [isAuthenticated] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
   const [message, setMessage] = useState('');
   const [draftId, setDraftId] = useState(null);
   const [communities, setCommunities] = useState([]);
@@ -50,6 +51,7 @@ export default function WritePage() {
 
   const updateEditorData = (data) => {
     editorDataRef.current = { ...editorDataRef.current, ...data };
+    if (published) setPublished(false);
   };
 
   const handleCommunityChange = useCallback(({ communityId: nextId, coAuthorIds: nextCoAuthors }) => {
@@ -149,11 +151,13 @@ export default function WritePage() {
     }
 
     setPublishing(true);
+    setPublished(false);
     setMessage('');
 
     try {
       const ok = await persistBlog({ isPublished: true });
       if (ok) {
+        setPublished(true);
         setMessage('Published successfully!');
         setTimeout(() => setMessage(''), 3000);
       }
@@ -205,16 +209,16 @@ export default function WritePage() {
             </button>
             <button
               onClick={handlePublish}
-              disabled={busy || (communityId && !canPublishCommunity)}
+              disabled={busy || published || (communityId && !canPublishCommunity)}
               aria-busy={publishing}
-              className="write-publish-btn"
+              className={`write-publish-btn${published ? ' write-publish-btn--published' : ''}`}
               title={
                 communityId && !canPublishCommunity
                   ? 'Contributors can only save drafts for communities'
                   : undefined
               }
             >
-              {publishing ? 'Publishing...' : 'Publish'}
+              {publishing ? 'Publishing...' : published ? 'Published ✓' : 'Publish'}
             </button>
           </div>
         </div>

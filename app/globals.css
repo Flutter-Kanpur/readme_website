@@ -57,6 +57,13 @@ body {
     padding-bottom: calc(72px + env(safe-area-inset-bottom));
     background-color: #ffffff;
   }
+
+  /* When a page opts out of the BottomNav (sets .no-bottom-nav on its
+     root element), drop the reserved 72px so we don't leave a blank
+     strip at the bottom of the page. */
+  #app-scroll:has(.no-bottom-nav) {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 /* ───────── Top pill navbar visibility ─────────
@@ -156,7 +163,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.25rem;
   color: #9ca3af;
   text-decoration: none;
   font-weight: 500;
@@ -182,6 +189,10 @@ body {
 .bottom-nav__label {
   font-size: 0.75rem;
   line-height: 1;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Entry Animations */
