@@ -77,7 +77,11 @@
 
 @media (max-width: 767px) {
   footer.footer-wrapper {
-    padding: 16px 16px 12px;
+    padding: 16px 16px calc(12px + var(--bottom-nav-offset));
+  }
+
+  .no-bottom-nav footer.footer-wrapper {
+    padding-bottom: 12px;
   }
 
   footer.footer-wrapper .footer-brand {

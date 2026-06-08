@@ -7,6 +7,8 @@
 :root {
   --background: #000000;
   --foreground: #171717;
+  /* Fixed bottom tab bar: icon + label + padding + home indicator */
+  --bottom-nav-offset: calc(80px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Hard-lock the root: html/body never scroll, so they cannot
@@ -54,8 +56,13 @@ body {
    blue strip in the padding gap above the fixed bottom nav. */
 @media (max-width: 767px) {
   #app-scroll {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    padding-bottom: var(--bottom-nav-offset);
     background-color: #ffffff;
+  }
+
+  /* Footer carries its own bottom-nav clearance — avoid doubling the gap. */
+  #app-scroll:has(footer.footer-wrapper) {
+    padding-bottom: 16px;
   }
 
   html {
@@ -66,7 +73,7 @@ body {
      root element), drop the reserved 72px so we don't leave a blank
      strip at the bottom of the page. */
   #app-scroll:has(.no-bottom-nav) {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
@@ -163,7 +170,7 @@ body {
   }
 
   #app-scroll.keyboard-open {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 

@@ -115,8 +115,11 @@ export default function DraftsPage() {
         <Navbar />
         <div className="drafts-container">
           <div className="drafts-header">
-            <div className="h-10 w-48 shimmer bg-gray-200 rounded-lg"></div>
-            <div className="h-10 w-32 shimmer bg-gray-200 rounded-full"></div>
+            <div className="h-3 w-32 shimmer bg-gray-200 rounded"></div>
+            <div className="drafts-header__row">
+              <div className="h-10 w-32 shimmer bg-gray-200 rounded-lg"></div>
+              <div className="h-10 w-28 shimmer bg-gray-200 rounded-full"></div>
+            </div>
           </div>
           <div className="drafts-loading-skeleton">
             {[1, 2, 3].map(i => (
@@ -129,17 +132,22 @@ export default function DraftsPage() {
   }
 
   return (
-    <div className="drafts-page">
+    <div className="grid-background min-h-screen">
       <Navbar />
       <div className="drafts-container" style={{ position: 'relative', zIndex: 1 }}>
         <div className="drafts-header">
-          <h1>My Drafts</h1>
-          <button
-            onClick={() => router.push('/write')}
-            className="new-draft-btn"
-          >
-            <span>+</span> New Draft
-          </button>
+          <p className="drafts-header__eyebrow">
+            Complete your
+          </p>
+          <div className="drafts-header__row">
+            <h1>Drafts</h1>
+            <button
+              onClick={() => router.push('/write')}
+              className="new-draft-btn"
+            >
+              <span>+</span> New Draft
+            </button>
+          </div>
         </div>
 
         {drafts.length === 0 ? (
