@@ -157,6 +157,14 @@ body {
   .bottom-nav {
     display: flex !important;
   }
+
+  .bottom-nav--keyboard-open {
+    display: none !important;
+  }
+
+  #app-scroll.keyboard-open {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 .bottom-nav__tab {

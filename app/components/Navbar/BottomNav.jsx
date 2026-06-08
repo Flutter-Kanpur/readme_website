@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import useMobileKeyboardOpen from "@/app/hooks/useMobileKeyboardOpen";
 import {
   CommunityNavIcon,
   DraftNavIcon,
@@ -18,6 +19,7 @@ import {
  * correct tab highlighted.
  */
 export default function BottomNav({ user, pathname }) {
+  const keyboardOpen = useMobileKeyboardOpen();
   const profileHref = user ? `/profile/${user.id}` : "/login";
   const profileActive =
     pathname?.startsWith("/profile") ||
@@ -61,7 +63,11 @@ export default function BottomNav({ user, pathname }) {
   ];
 
   return (
-    <nav className="bottom-nav md:hidden" aria-label="Primary">
+    <nav
+      className={`bottom-nav md:hidden${keyboardOpen ? " bottom-nav--keyboard-open" : ""}`}
+      aria-label="Primary"
+      aria-hidden={keyboardOpen}
+    >
       {tabs.map((tab) => {
         const Icon = tab.icon;
         return (
