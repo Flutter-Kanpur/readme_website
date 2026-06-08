@@ -25,7 +25,7 @@ export default async function CommunityNewsletterPage({ params }) {
 
   return (
     <main className="communities-page communities-page--plain no-bottom-nav">
-      <Navbar hideBottomNav />
+      <Navbar hideBottomNav plain />
       <article className="newsletter-detail">
         <Link
           href={`/communities/${slug}`}

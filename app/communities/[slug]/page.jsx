@@ -11,7 +11,9 @@ import {
   getCommunityNewsletters,
   getCommunityNewsletterSubscriberCount,
 } from "@/app/lib/supabase/communities";
+import { getCommunityFollowerCount } from "@/app/lib/supabase/communityFollows";
 import { sanitizeCoverImage, buildExcerpt } from "@/app/lib/supabase/queries";
+import CommunityProfileHero from "./CommunityProfileHero";
 import "../communities.css";
 
 export const revalidate = 60;
@@ -33,11 +35,13 @@ export default async function CommunityProfilePage({ params }) {
 
   if (!community) notFound();
 
-  const [blogs, memberCount, newsletters, subscriberCount] = await Promise.all([
+  const [blogs, memberCount, newsletters, subscriberCount, followerCount] =
+    await Promise.all([
     getCommunityPublishedBlogs(community.id),
     getCommunityMemberCount(community.id),
     getCommunityNewsletters(community.id, { limit: 6 }),
     getCommunityNewsletterSubscriberCount(community.id),
+    getCommunityFollowerCount(community.id),
   ]);
 
   const articles = blogs.map((blog) => ({
@@ -64,33 +68,13 @@ export default async function CommunityProfilePage({ params }) {
         <Link href="/communities" className="community-profile__back">
           ← Back to Communities
         </Link>
-        <header className="community-profile__hero">
-          <div className="community-profile__hero-row">
-            {community.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={community.logo_url} alt="" className="community-profile__logo" />
-            ) : (
-              <div className="community-profile__logo community-profile__logo--placeholder">
-                {community.name?.charAt(0) ?? "C"}
-              </div>
-            )}
-            <div className="community-profile__hero-text">
-              <h1>{community.name}</h1>
-              {community.description && <p>{community.description}</p>}
-              <p className="community-profile__meta">
-                {memberCount} member{memberCount === 1 ? "" : "s"} · {articles.length} published
-              </p>
-            </div>
-          </div>
-          <div className="community-profile__actions">
-            <Link href={`/communities/${slug}/dashboard`} className="community-profile__btn">
-              Community dashboard
-            </Link>
-            <Link href="/write" className="community-profile__btn community-profile__btn--secondary">
-              Write for community
-            </Link>
-          </div>
-        </header>
+        <CommunityProfileHero
+          community={community}
+          slug={slug}
+          contributorCount={memberCount}
+          initialFollowerCount={followerCount}
+          publishedCount={articles.length}
+        />
 
         <NewsletterSubscribe
           communityId={community.id}

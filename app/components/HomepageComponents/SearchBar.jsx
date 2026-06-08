@@ -14,7 +14,7 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto mt-12 px-6">
+    <div className="w-full max-w-3xl mx-auto mt-4 md:mt-12 px-6">
       <div className="flex items-center gap-2 sm:gap-3 bg-white border border-gray-200 rounded-full pl-4 pr-2 sm:pl-6 sm:pr-3 py-2 sm:py-3 shadow-sm min-w-0">
         <Search
           size={18}

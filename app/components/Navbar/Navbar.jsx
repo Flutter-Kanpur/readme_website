@@ -157,7 +157,7 @@ function UserProfile({ user, onSignOut, pathname, mounted }) {
   );
 }
 
-export default function Navbar({ hideBottomNav = false } = {}) {
+export default function Navbar({ hideBottomNav = false, plain = false } = {}) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -196,7 +196,8 @@ export default function Navbar({ hideBottomNav = false } = {}) {
 
   return (
     <>
-    <header className="top-navbar relative z-10 w-full pt-4 px-4 sm:px-6 md:px-8">
+    <div className={`page-gradient${plain ? ' page-gradient--plain' : ''}`}>
+      <header className="top-navbar relative z-10 w-full px-4 sm:px-6 md:px-8">
       <nav
         aria-label="Main"
         className="navbar-pill max-w-6xl mx-auto h-14 md:h-[60px] px-5 md:px-8 bg-white border border-gray-200 rounded-full shadow-sm"
@@ -266,6 +267,7 @@ export default function Navbar({ hideBottomNav = false } = {}) {
         </div>
       </nav>
     </header>
+    </div>
     {!hideBottomNav && <BottomNav user={user} pathname={pathname} />}
     </>
   );

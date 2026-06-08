@@ -5,6 +5,18 @@
   background-color: white;
 }
 
+.write-desktop-navbar {
+  flex-shrink: 0;
+}
+
+.write-mobile-header {
+  display: none;
+}
+
+.write-footer--desktop {
+  display: block;
+}
+
 .write-footer {
   border-top: 1px solid rgb(229, 231, 235);
   padding: 1rem 2rem;
@@ -42,6 +54,11 @@
 .write-draft-btn {
   font-size: 0.875rem;
   color: rgb(75, 85, 99);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0;
 }
 
 .write-draft-btn:hover {
@@ -59,6 +76,9 @@
   padding: 0.375rem 1rem;
   border-radius: 0.375rem;
   font-size: 0.875rem;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .write-publish-btn:hover {
@@ -122,13 +142,90 @@
   overflow-y: auto;
 }
 
-/* ───────── Mobile (<768px): stack editor over sidebar ───────── */
+/* ───────── Mobile (<768px): top action bar + stacked layout ───────── */
 @media (max-width: 767px) {
-  /* Drop the rigid viewport-height lock so the page can scroll
-     naturally inside #app-scroll. */
   .write-page {
     height: auto;
     min-height: 100dvh;
+  }
+
+  .write-desktop-navbar,
+  .write-footer--desktop {
+    display: none;
+  }
+
+  .write-mobile-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgb(229, 231, 235);
+    background-color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    flex-shrink: 0;
+  }
+
+  .write-mobile-header__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #111;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .write-mobile-header__close-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .write-mobile-header__actions {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .write-mobile-header__actions .write-message {
+    display: none;
+  }
+
+  .write-mobile-header__actions .write-buttons {
+    margin-left: 0;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .write-mobile-header__actions .write-draft-btn {
+    color: #374151;
+    font-size: 0.9375rem;
+    white-space: nowrap;
+  }
+
+  .write-mobile-header__actions .write-publish-btn {
+    background-color: #111;
+    color: #fff;
+    padding: 0.5rem 1.125rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+
+  .write-mobile-header__actions .write-publish-btn:hover {
+    background-color: #1f2937;
+  }
+
+  .write-mobile-header__actions .write-publish-btn--published,
+  .write-mobile-header__actions .write-publish-btn--published:disabled {
+    background-color: rgb(22, 163, 74);
   }
 
   .write-content {
@@ -139,7 +236,7 @@
   .write-editor-section {
     flex: 0 0 auto;
     overflow-y: visible;
-    padding: 1.25rem 0 1.5rem;
+    padding: 0 0 1.25rem;
   }
 
   .write-editor-wrapper {
@@ -154,32 +251,5 @@
     border-top: 1px solid rgb(229, 231, 235);
     padding: 1.5rem 1rem 2rem;
     overflow-y: visible;
-  }
-
-  /* Sticky action bar — always reachable on small screens. */
-  .write-footer {
-    padding: 0.75rem 1rem;
-    position: sticky;
-    bottom: 0;
-    z-index: 5;
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
-  }
-
-  .write-actions {
-    justify-content: space-between;
-  }
-
-  .write-message {
-    flex-basis: 100%;
-    order: -1;
-  }
-
-  .write-buttons {
-    margin-left: auto;
-    gap: 0.5rem;
-  }
-
-  .write-publish-btn {
-    padding: 0.5rem 1rem;
   }
 }

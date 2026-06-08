@@ -1,6 +1,25 @@
 .communities-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #9CC8FE 0%, #eff6ff 25%, #ffffff 60%);
+  background-color: #ffffff;
+}
+
+@media (max-width: 767px) {
+  .communities-page:not(.communities-page--plain) {
+    background-image: linear-gradient(
+      180deg,
+      rgba(35, 115, 226, 0.4) 0%,
+      rgba(255, 255, 255, 0) 96px
+    );
+    background-repeat: no-repeat;
+    background-size: 100% 96px;
+  }
+}
+
+@media (min-width: 768px) {
+  .communities-page:not(.communities-page--plain) {
+    background-image: none;
+    background: linear-gradient(180deg, #9cc8fe 0%, #eff6ff 25%, #ffffff 60%);
+  }
 }
 
 .communities-page.communities-page--plain {
@@ -183,9 +202,9 @@
   font-size: 1.75rem;
 }
 
-.community-profile__meta {
+.community-profile__hero .community-profile__meta {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #111;
   margin-top: 0.5rem;
 }
 
