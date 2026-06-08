@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Users, Search, User, FileText } from "lucide-react";
+import {
+  CommunityNavIcon,
+  DraftNavIcon,
+  ExploreNavIcon,
+  HomeNavIcon,
+  ProfileNavIcon,
+} from "./NavIcons";
 
 /**
  * Mobile bottom tab bar. Rendered by Navbar and gated to `md:hidden`,
@@ -21,19 +27,13 @@ export default function BottomNav({ user, pathname }) {
     {
       label: "Home",
       href: "/",
-      icon: Home,
+      icon: HomeNavIcon,
       isActive: pathname === "/",
-    },
-    {
-      label: "Community",
-      href: "/communities",
-      icon: Users,
-      isActive: pathname?.startsWith("/communities") || pathname?.startsWith("/writers"),
     },
     {
       label: "Explore",
       href: "/articles",
-      icon: Search,
+      icon: ExploreNavIcon,
       isActive: pathname?.startsWith("/articles"),
     },
     ...(user
@@ -41,15 +41,21 @@ export default function BottomNav({ user, pathname }) {
           {
             label: "Drafts",
             href: "/drafts",
-            icon: FileText,
+            icon: DraftNavIcon,
             isActive: pathname?.startsWith("/drafts"),
           },
         ]
       : []),
     {
+      label: "Community",
+      href: "/communities",
+      icon: CommunityNavIcon,
+      isActive: pathname?.startsWith("/communities") || pathname?.startsWith("/writers"),
+    },
+    {
       label: "Profile",
       href: profileHref,
-      icon: User,
+      icon: ProfileNavIcon,
       isActive: profileActive,
     },
   ];
@@ -65,11 +71,7 @@ export default function BottomNav({ user, pathname }) {
             className={`bottom-nav__tab${tab.isActive ? " bottom-nav__tab--active" : ""}`}
             aria-current={tab.isActive ? "page" : undefined}
           >
-            <Icon
-              className="bottom-nav__icon"
-              aria-hidden="true"
-              strokeWidth={tab.isActive ? 2.5 : 2}
-            />
+            <Icon className="bottom-nav__icon" />
             <span className="bottom-nav__label">{tab.label}</span>
           </Link>
         );

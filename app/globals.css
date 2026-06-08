@@ -58,6 +58,10 @@ body {
     background-color: #ffffff;
   }
 
+  html {
+    background-color: #ffffff;
+  }
+
   /* When a page opts out of the BottomNav (sets .no-bottom-nav on its
      root element), drop the reserved 72px so we don't leave a blank
      strip at the bottom of the page. */
@@ -164,7 +168,7 @@ body {
   justify-content: center;
   gap: 0.25rem;
   padding: 0.25rem 0.25rem;
-  color: #9ca3af;
+  color: #949494;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.15s ease;
@@ -176,7 +180,7 @@ body {
 }
 
 .bottom-nav__tab--active {
-  color: #4285F4;
+  color: #4167F2;
   font-weight: 600;
 }
 
@@ -214,10 +218,69 @@ body {
   background-size: 1000px 100%;
 }
 
-.grid-background {
-  background: linear-gradient(180deg, #9CC8FE 0%, #eff6ff 25%, #ffffff 60%);
+/* ───────── Page gradient band (Navbar wrapper) ─────────
+   Mobile: Figma band — rgba blue fade into transparent.
+   Desktop (768px+): transparent wrapper; .grid-background keeps the legacy gradient. */
+.page-gradient {
+  width: 100%;
+  height: 96px;
+  background: linear-gradient(
+    180deg,
+    rgba(35, 115, 226, 0.4) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-bottom: -52px;
+  margin-top: 0;
+  position: relative;
+  z-index: 10;
+  pointer-events: none;
+  color: #1f1f1f;
+}
 
+.page-gradient--plain {
+  height: 64px;
+  background: #ffffff;
+  padding-top: 16px;
+  margin-bottom: 0;
+  margin-top: 3rem;
+}
+
+.page-gradient .top-navbar {
+  pointer-events: auto;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .page-gradient {
+    height: auto;
+    background: transparent;
+    padding-top: 1rem;
+    margin-bottom: 0;
+    margin-top: 0;
+  }
+
+  .page-gradient--plain {
+    height: auto;
+    background: #ffffff;
+    padding-top: 1rem;
+    margin-top: 0;
+  }
+}
+
+.grid-background {
+  background: #ffffff;
   font-family: var(--font-google-sans), "Google Sans", sans-serif;
+}
+
+@media (min-width: 768px) {
+  .grid-background {
+    background: linear-gradient(180deg, #9cc8fe 0%, #eff6ff 25%, #ffffff 60%);
+  }
 }
 
 /* Navbar pill container */

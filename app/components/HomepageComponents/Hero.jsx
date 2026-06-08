@@ -26,7 +26,7 @@ const HERO_CONTENT = {
 
 export default function Hero() {
   return (
-    <section className="w-full min-h-[60vh] md:min-h-[70vh] pt-20 md:pt-32 pb-16 md:pb-24 px-6 flex flex-col items-center justify-center text-center relative max-w-7xl mx-auto opacity-0 animate-[fade-in_0.5s_ease-out_forwards]">
+    <section className="w-full min-h-[60vh] md:min-h-[70vh] pt-12 md:pt-32 pb-16 md:pb-24 px-6 flex flex-col items-center justify-center text-center relative max-w-7xl mx-auto opacity-0 animate-[fade-in_0.5s_ease-out_forwards]">
       <p className="text-[10px] md:text-[11px] tracking-[0.2em] md:tracking-[0.25em] text-black uppercase mb-6 md:mb-8 font-semibold opacity-60">
         {HERO_CONTENT.tagline}
       </p>

@@ -8,7 +8,7 @@ import { getArticleWithAuthor } from "@/app/lib/supabase/queries";
 import RelatedArticlesSection from "./RelatedArticlesSection";
 import RelatedArticlesSidebarSkeleton from "./RelatedArticlesSidebarSkeleton";
 import AuthorCardSection from "./AuthorCardSection";
-import SideBannerAd from "./SideBannerAd";
+import SidebarAd from "./SidebarAd";
 import "./styles.css";
 
 export const revalidate = 60;
@@ -33,7 +33,6 @@ export default async function ArticlePage({ params }) {
     <div className="article-page">
       <Navbar />
       <div className="article-page-layout">
-        <SideBannerAd position="left" />
         <div className="article-container">
           <article className="article-main">
             <h1 className="article-title">{blog.title}</h1>
@@ -68,6 +67,7 @@ export default async function ArticlePage({ params }) {
 
           <aside className="article-sidebar">
             <AuthorCardSection authors={allAuthors} />
+            <SidebarAd />
             <Suspense fallback={<RelatedArticlesSidebarSkeleton />}>
               <RelatedArticlesSection
                 authorId={blog.author_id}
@@ -76,7 +76,6 @@ export default async function ArticlePage({ params }) {
             </Suspense>
           </aside>
         </div>
-        <SideBannerAd position="right" />
       </div>
       <Footer />
     </div>

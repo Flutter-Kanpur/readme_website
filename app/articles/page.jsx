@@ -10,9 +10,9 @@ export default async function ArticlesPage() {
     <main className="grid-background min-h-screen">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6 md:pt-10 pb-24">
-        <header className="mb-8 md:mb-10">
-          <p className="text-[10px] md:text-[11px] tracking-[0.2em] md:tracking-[0.25em] text-gray-700 uppercase mb-4 font-semibold opacity-70">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-2 md:pt-10 pb-24">
+        <header className="mb-6 md:mb-10">
+          <p className="text-[10px] md:text-[11px] tracking-[0.2em] md:tracking-[0.25em] text-gray-700 uppercase mb-3 md:mb-4 font-semibold opacity-70">
             Browse the library
           </p>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-black tracking-tight leading-[1.1] mb-4">

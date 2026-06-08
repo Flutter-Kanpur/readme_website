@@ -42,7 +42,7 @@ export default function EditProfile() {
   if (!userId) {
     return (
       <div className="page">
-        <Navbar />
+        <Navbar plain />
         <div style={{ padding: '40px', textAlign: 'center' }}>
           <h2>Invalid profile URL</h2>
           <p>No user ID provided.</p>
@@ -55,7 +55,7 @@ export default function EditProfile() {
   if (loading) {
     return (
       <div className="page">
-        <Navbar />
+        <Navbar plain />
         <div style={{ padding: '100px', textAlign: 'center' }}>
           <h2>Loading profile...</h2>
         </div>
@@ -67,7 +67,7 @@ export default function EditProfile() {
   if (!profile) {
     return (
       <div className="page">
-        <Navbar />
+        <Navbar plain />
         <div style={{ padding: '100px', textAlign: 'center' }}>
           <h2>User not found</h2>
         </div>
@@ -78,7 +78,7 @@ export default function EditProfile() {
 
   return (
     <div className="page">
-      <Navbar />
+      <Navbar plain />
       <div className="edit-profile-page" style={{ position: 'relative', zIndex: 1 }}>
         <EditProfileHeader />
 

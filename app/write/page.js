@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Editor from "../components/Editor";
 import ArticleSettings from "../components/ArticleSettings";
 import CommunityPublishSettings from "../components/CommunityPublishSettings";
+import WriteActionBar from '../components/WriteActionBar';
+import WriteMobileHeader from '../components/WriteMobileHeader';
 import Navbar from '../components/Navbar/Navbar';
 import { supabase } from "@/app/lib/supabase";
 import { getSafeUser } from "@/app/lib/supabase/auth";
@@ -170,8 +172,22 @@ export default function WritePage() {
   };
 
   return (
-    <div className="write-page">
-      <Navbar />
+    <div className="write-page no-bottom-nav">
+      <div className="write-desktop-navbar">
+        <Navbar hideBottomNav />
+      </div>
+
+      <WriteMobileHeader
+        message={message}
+        saving={saving}
+        publishing={publishing}
+        published={published}
+        busy={busy}
+        draftLabel={draftId ? 'Update Draft' : 'Save Draft'}
+        onSaveDraft={handleSaveDraft}
+        onPublish={handlePublish}
+        publishDisabled={communityId && !canPublishCommunity}
+      />
 
       <div className="write-content">
         <div className="write-editor-section">
@@ -191,38 +207,19 @@ export default function WritePage() {
         </div>
       </div>
 
-      <div className="write-footer">
-        <div className="write-actions">
-          {message && (
-            <span className={`write-message ${message.includes('Error') ? 'write-message-error' : 'write-message-success'}`}>
-              {message}
-            </span>
-          )}
-          <div className="write-buttons">
-            <button
-              onClick={handleSaveDraft}
-              disabled={busy}
-              aria-busy={saving}
-              className="write-draft-btn"
-            >
-              {saving ? 'Saving...' : draftId ? 'Update Draft' : 'Save Draft'}
-            </button>
-            <button
-              onClick={handlePublish}
-              disabled={busy || published || (communityId && !canPublishCommunity)}
-              aria-busy={publishing}
-              className={`write-publish-btn${published ? ' write-publish-btn--published' : ''}`}
-              title={
-                communityId && !canPublishCommunity
-                  ? 'Contributors can only save drafts for communities'
-                  : undefined
-              }
-            >
-              {publishing ? 'Publishing...' : published ? 'Published ✓' : 'Publish'}
-            </button>
-          </div>
-        </div>
-      </div>
+      <footer className="write-footer write-footer--desktop">
+        <WriteActionBar
+          message={message}
+          saving={saving}
+          publishing={publishing}
+          published={published}
+          busy={busy}
+          draftLabel={draftId ? 'Update Draft' : 'Save Draft'}
+          onSaveDraft={handleSaveDraft}
+          onPublish={handlePublish}
+          publishDisabled={communityId && !canPublishCommunity}
+        />
+      </footer>
     </div>
   );
 }

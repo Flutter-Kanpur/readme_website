@@ -105,24 +105,27 @@ export default function ProfilePage() {
         <Navbar />
         <div className="container" style={{ position: 'relative', zIndex: 1 }}>
           <div className="profileSection">
-            <div className="flex items-center gap-8 mb-10">
-              <div className="w-40 h-40 rounded-full shimmer bg-gray-200"></div>
-              <div className="flex-1 space-y-4">
-                <div className="h-10 w-64 shimmer bg-gray-200 rounded-lg"></div>
-                <div className="h-6 w-full max-w-md shimmer bg-gray-200 rounded-lg"></div>
-                <div className="h-6 w-full max-w-sm shimmer bg-gray-200 rounded-lg"></div>
+            <div className="profile-skeleton-header">
+              <div className="profile-skeleton-avatar shimmer bg-gray-200" />
+              <div className="profile-skeleton-text">
+                <div className="profile-skeleton-line profile-skeleton-line--name shimmer bg-gray-200" />
+                <div className="profile-skeleton-line shimmer bg-gray-200" />
+                <div className="profile-skeleton-line profile-skeleton-line--short shimmer bg-gray-200" />
               </div>
             </div>
+            <div className="profile-skeleton-actions shimmer bg-gray-200" />
           </div>
           <div className="blogsarea">
-            <div className="flex-1 space-y-8">
-              <div className="h-8 w-40 shimmer bg-gray-200 rounded-lg mb-6"></div>
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-48 w-full shimmer bg-gray-200 rounded-2xl"></div>
-              ))}
+            <div>
+              <div className="profile-skeleton-section-title shimmer bg-gray-200" />
+              <div className="articles">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="profile-skeleton-article shimmer bg-gray-200" />
+                ))}
+              </div>
             </div>
             <div className="sidebar">
-              <div className="h-64 w-full shimmer bg-gray-200 rounded-xl"></div>
+              <div className="profile-skeleton-stats shimmer bg-gray-200" />
             </div>
           </div>
         </div>
