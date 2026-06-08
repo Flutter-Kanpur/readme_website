@@ -62,7 +62,7 @@ body {
 
   /* Footer carries its own bottom-nav clearance — avoid doubling the gap. */
   #app-scroll:has(footer.footer-wrapper) {
-    padding-bottom: 16px;
+    padding-bottom: 30px;
   }
 
   html {
