@@ -226,6 +226,95 @@
   margin-bottom: 0.25rem;
 }
 
+/* Support + views row (matches Flutter BlogSupportButton / BlogViewCount) */
+.article-engagement {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.25rem 0 1.5rem;
+}
+
+.article-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.125rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.article-support-btn:hover:not(:disabled) {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.article-support-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.article-support-btn.is-supported {
+  background: #fff1f2;
+  border-color: rgba(225, 29, 72, 0.35);
+  color: #e11d48;
+}
+
+.article-support-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.article-support-btn:not(.is-supported) .article-support-icon {
+  color: #6b7280;
+}
+
+.article-support-heart {
+  display: inline-flex;
+  transform-origin: center;
+}
+
+.article-support-heart.is-bounce {
+  animation: article-support-bounce 280ms ease-out;
+}
+
+@keyframes article-support-bounce {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.28);
+  }
+  70% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.article-view-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.article-view-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #6b7280;
+}
+
 .article-page .article-meta {
   font-size: 0.8125rem;
   color: #6b7280;

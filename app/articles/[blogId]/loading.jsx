@@ -17,6 +17,7 @@ export default function ArticleLoading() {
                 <div className="skeleton-line skeleton-line--meta" />
               </div>
             </div>
+            <div className="skeleton-line skeleton-line--meta" style={{ width: "12rem", marginBottom: "1.5rem" }} />
             <div className="skeleton-cover" />
             <div className="skeleton-content">
               <div className="skeleton-line" />

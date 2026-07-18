@@ -5,10 +5,13 @@ import Navbar from "@/app/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import ArticleCardAuthorInfo from "@/components/ArticleCardAuthorInfo/ArticleCardAuthorInfo";
 import { getArticleWithAuthor } from "@/app/lib/supabase/queries";
+import { parseLikeCount } from "@/app/lib/supabase/likes";
+import { parseViewCount } from "@/app/lib/supabase/views";
 import RelatedArticlesSection from "./RelatedArticlesSection";
 import RelatedArticlesSidebarSkeleton from "./RelatedArticlesSidebarSkeleton";
 import AuthorCardSection from "./AuthorCardSection";
 import SidebarAd from "./SidebarAd";
+import ArticleEngagement from "./ArticleEngagement";
 import "./styles.css";
 
 export const revalidate = 60;
@@ -45,6 +48,12 @@ export default async function ArticlePage({ params }) {
                 createdAt={blog.created_at}
               />
             )}
+
+            <ArticleEngagement
+              blogId={blog.blog_id}
+              initialLikeCount={parseLikeCount(blog)}
+              initialViewCount={parseViewCount(blog)}
+            />
 
             {blog.cover_image && (
               <div className="article-cover">
