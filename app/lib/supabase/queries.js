@@ -117,18 +117,53 @@ export async function getArticleWithAuthor(blogId) {
   if (!blogId) return null
 
   try {
-    return await fetchArticleWithAuthor(blogId, true)
+    return await fetchArticleWithAuthor(blogId, {
+      withCommunity: true,
+      withEngagement: true,
+    })
   } catch (error) {
     const msg = error?.message?.toLowerCase() ?? ''
-    if (
+    const missingCommunity =
       msg.includes('communities') ||
       msg.includes('blog_coauthors') ||
       msg.includes('schema cache')
-    ) {
+    const missingEngagement =
+      msg.includes('blog_likes') ||
+      msg.includes('view_count') ||
+      msg.includes('relationship') ||
+      msg.includes('pgrst200')
+
+    if (missingCommunity || missingEngagement) {
       try {
-        return await fetchArticleWithAuthor(blogId, false)
+        return await fetchArticleWithAuthor(blogId, {
+          withCommunity: !missingCommunity,
+          withEngagement: !missingEngagement,
+        })
       } catch (fallbackError) {
-        console.error('getArticleWithAuthor fallback error:', fallbackError?.message ?? fallbackError)
+        const fallbackMsg = fallbackError?.message?.toLowerCase() ?? ''
+        if (
+          fallbackMsg.includes('blog_likes') ||
+          fallbackMsg.includes('view_count') ||
+          fallbackMsg.includes('communities') ||
+          fallbackMsg.includes('blog_coauthors')
+        ) {
+          try {
+            return await fetchArticleWithAuthor(blogId, {
+              withCommunity: false,
+              withEngagement: false,
+            })
+          } catch (bareError) {
+            console.error(
+              'getArticleWithAuthor bare fallback error:',
+              bareError?.message ?? bareError,
+            )
+            return null
+          }
+        }
+        console.error(
+          'getArticleWithAuthor fallback error:',
+          fallbackError?.message ?? fallbackError,
+        )
         return null
       }
     }
@@ -137,7 +172,16 @@ export async function getArticleWithAuthor(blogId) {
   }
 }
 
-async function fetchArticleWithAuthor(blogId, withCommunity) {
+async function fetchArticleWithAuthor(
+  blogId,
+  { withCommunity = true, withEngagement = true } = {},
+) {
+  const engagementFields = withEngagement
+    ? `,
+      view_count,
+      blog_likes (count)`
+    : ''
+
   const selectFields = withCommunity
     ? `
       blog_id,
@@ -148,7 +192,7 @@ async function fetchArticleWithAuthor(blogId, withCommunity) {
       category,
       is_published,
       author_id,
-      community_id,
+      community_id${engagementFields},
       profiles (
         id,
         name,
@@ -181,7 +225,7 @@ async function fetchArticleWithAuthor(blogId, withCommunity) {
       cover_image,
       category,
       is_published,
-      author_id,
+      author_id${engagementFields},
       profiles (
         id,
         name,
@@ -243,12 +287,47 @@ export async function getBlogDetailByBlogId(blogId) {
       cover_image,
       category,
       is_published,
-      author_id
+      author_id,
+      view_count,
+      blog_likes (count)
     `)
     .eq('blog_id', blogId)
     .single()
 
   if (error) {
+    // Graceful fallback when likes/views schema is not deployed yet.
+    const msg = error.message?.toLowerCase() ?? ''
+    if (
+      msg.includes('blog_likes') ||
+      msg.includes('view_count') ||
+      msg.includes('relationship')
+    ) {
+      const { data: fallback, error: fallbackError } = await supabase
+        .from('blogs')
+        .select(`
+          blog_id,
+          title,
+          content,
+          created_at,
+          cover_image,
+          category,
+          is_published,
+          author_id
+        `)
+        .eq('blog_id', blogId)
+        .single()
+
+      if (fallbackError) {
+        console.error(
+          'getBlogDetailByBlogId error:',
+          fallbackError.message,
+          fallbackError.details,
+        )
+        throw fallbackError
+      }
+      return fallback
+    }
+
     console.error('getBlogDetailByBlogId error:', error.message, error.details)
     throw error
   }
