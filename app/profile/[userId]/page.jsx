@@ -13,6 +13,7 @@ import {
 } from '@/app/lib/supabase/queries'
 import { getSafeUser } from '@/app/lib/supabase/auth'
 import { getFollowStats } from '@/app/lib/supabase/follows'
+import { preloadLikedBlogIds } from '@/app/lib/supabase/likeCache'
 import useFollowAuthor from '@/app/hooks/useFollowAuthor'
 import CustomButton from '@/components/Button/CustomButton'
 import Footer from '@/components/Footer/Footer'
@@ -80,6 +81,9 @@ export default function ProfilePage() {
 
         setBlogs(blogsWithAuthors)
         setLoggedInUser(user)
+        preloadLikedBlogIds(blogsWithAuthors.map((b) => b.blog_id)).catch(
+          () => {},
+        )
       } catch (err) {
         console.error('Profile load error:', err)
       } finally {

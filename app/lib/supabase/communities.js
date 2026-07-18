@@ -310,28 +310,64 @@ export async function getCommunityMembers(communityId) {
 export async function getCommunityPublishedBlogs(communityId) {
   if (!communityId) return [];
 
-  const { data, error } = await supabase
-    .from('blogs')
-    .select(`
-      blog_id,
-      title,
-      content,
-      created_at,
-      cover_image,
-      category,
-      author_id,
-      profiles ( name, avatar_url ),
-      blog_coauthors (
-        user_id,
-        profiles ( id, name, avatar_url )
-      )
-    `)
-    .eq('community_id', communityId)
-    .eq('is_published', true)
-    .order('created_at', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('blogs')
+      .select(`
+        blog_id,
+        title,
+        content,
+        created_at,
+        cover_image,
+        category,
+        author_id,
+        view_count,
+        blog_likes (count),
+        profiles ( name, avatar_url ),
+        blog_coauthors (
+          user_id,
+          profiles ( id, name, avatar_url )
+        )
+      `)
+      .eq('community_id', communityId)
+      .eq('is_published', true)
+      .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data ?? [];
+    if (error) throw error;
+    return data ?? [];
+  } catch (error) {
+    const msg = error?.message?.toLowerCase() ?? '';
+    if (
+      msg.includes('blog_likes') ||
+      msg.includes('view_count') ||
+      msg.includes('relationship') ||
+      msg.includes('schema cache')
+    ) {
+      const { data, error: fallbackError } = await supabase
+        .from('blogs')
+        .select(`
+          blog_id,
+          title,
+          content,
+          created_at,
+          cover_image,
+          category,
+          author_id,
+          profiles ( name, avatar_url ),
+          blog_coauthors (
+            user_id,
+            profiles ( id, name, avatar_url )
+          )
+        `)
+        .eq('community_id', communityId)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false });
+
+      if (fallbackError) throw fallbackError;
+      return data ?? [];
+    }
+    throw error;
+  }
 }
 
 export async function getCommunityDrafts(communityId) {

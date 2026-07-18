@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import ArticleCardEngagement from "@/app/components/ArticleCardEngagement";
 
 function getAuthorLine(article) {
   const primary = article.profiles?.name || "Anonymous";
@@ -112,6 +113,8 @@ export default function ArticleCard({ article }) {
           <p className="text-sm md:text-base text-gray-500 line-clamp-3 md:line-clamp-2 leading-relaxed">
             {preview || "No description available."}
           </p>
+
+          <ArticleCardEngagement article={article} />
         </div>
 
         {coverImage && (

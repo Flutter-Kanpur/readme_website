@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import ArticleCard from "../components/HomepageComponents/ArticleCard";
+import { preloadLikedBlogIds } from "@/app/lib/supabase/likeCache";
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
@@ -27,6 +28,8 @@ function SearchPageContent() {
           content,
           category,
           cover_image,
+          view_count,
+          blog_likes (count),
           profiles (
             name,
             avatar_url
@@ -39,9 +42,50 @@ function SearchPageContent() {
         );
 
       if (error) {
-        console.error("Search error:", error);
+        // Fallback when likes/views schema is not deployed yet.
+        const msg = (error.message || "").toLowerCase();
+        if (
+          msg.includes("blog_likes") ||
+          msg.includes("view_count") ||
+          msg.includes("relationship") ||
+          msg.includes("schema cache")
+        ) {
+          const { data: fallback, error: fallbackError } = await supabase
+            .from("blogs")
+            .select(
+              `
+              blog_id,
+              title,
+              content,
+              category,
+              cover_image,
+              profiles (
+                name,
+                avatar_url
+              )
+            `
+            )
+            .eq("is_published", true)
+            .or(
+              `title.ilike.%${query}%,content.ilike.%${query}%,category.ilike.%${query}%`
+            );
+
+          if (fallbackError) {
+            console.error("Search error:", fallbackError);
+            setArticles([]);
+          } else {
+            setArticles(fallback || []);
+            preloadLikedBlogIds((fallback || []).map((a) => a.blog_id)).catch(
+              () => {},
+            );
+          }
+        } else {
+          console.error("Search error:", error);
+          setArticles([]);
+        }
       } else {
         setArticles(data || []);
+        preloadLikedBlogIds((data || []).map((a) => a.blog_id)).catch(() => {});
       }
 
       setLoading(false);

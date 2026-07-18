@@ -46,22 +46,49 @@ export async function getProfileById(userId) {
 export async function getPublishedBlogsByAuthor(authorId) {
   if (!authorId) return []
 
-  const { data, error } = await supabase
-    .from('blogs')
-    .select('*')
-    .eq('author_id', authorId)
-    .eq('is_published', true)
-    .order('created_at', { ascending: false })
+  try {
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('*, blog_likes (count)')
+      .eq('author_id', authorId)
+      .eq('is_published', true)
+      .order('created_at', { ascending: false })
 
-  if (error) {
+    if (error) throw error
+
+    return (data || []).map((blog) => ({
+      ...blog,
+      cover_image: sanitizeCoverImage(blog.cover_image),
+    }))
+  } catch (error) {
+    const msg = error?.message?.toLowerCase() ?? ''
+    if (
+      msg.includes('blog_likes') ||
+      msg.includes('view_count') ||
+      msg.includes('relationship') ||
+      msg.includes('schema cache')
+    ) {
+      const { data, error: fallbackError } = await supabase
+        .from('blogs')
+        .select('*')
+        .eq('author_id', authorId)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+
+      if (fallbackError) {
+        console.error('getPublishedBlogsByAuthor error:', fallbackError)
+        throw new Error(fallbackError.message)
+      }
+
+      return (data || []).map((blog) => ({
+        ...blog,
+        cover_image: sanitizeCoverImage(blog.cover_image),
+      }))
+    }
+
     console.error('getPublishedBlogsByAuthor error:', error)
     throw new Error(error.message)
   }
-
-  return (data || []).map((blog) => ({
-    ...blog,
-    cover_image: sanitizeCoverImage(blog.cover_image),
-  }))
 }
 
 export async function getAuthorByBlogId(blogId) {
@@ -366,21 +393,58 @@ export async function getRelatedArticlesByAuthorId(authorId, currentBlogId) {
 
 export async function getLatestArticle(category = "for_you") {
   try {
-    return await fetchLatestArticles(category, true);
+    return await fetchLatestArticles(category, {
+      withCommunity: true,
+      withEngagement: true,
+    });
   } catch (error) {
     const msg = error?.message?.toLowerCase() ?? "";
-    if (
+    const missingCommunity =
       msg.includes("communities") ||
       msg.includes("blog_coauthors") ||
-      msg.includes("schema cache")
-    ) {
-      return fetchLatestArticles(category, false);
+      msg.includes("schema cache");
+    const missingEngagement =
+      msg.includes("blog_likes") ||
+      msg.includes("view_count") ||
+      msg.includes("relationship") ||
+      msg.includes("pgrst200");
+
+    if (missingCommunity || missingEngagement) {
+      try {
+        return await fetchLatestArticles(category, {
+          withCommunity: !missingCommunity,
+          withEngagement: !missingEngagement,
+        });
+      } catch (fallbackError) {
+        const fallbackMsg = fallbackError?.message?.toLowerCase() ?? "";
+        if (
+          fallbackMsg.includes("blog_likes") ||
+          fallbackMsg.includes("view_count") ||
+          fallbackMsg.includes("communities") ||
+          fallbackMsg.includes("blog_coauthors")
+        ) {
+          return fetchLatestArticles(category, {
+            withCommunity: false,
+            withEngagement: false,
+          });
+        }
+        throw fallbackError;
+      }
     }
     throw error;
   }
 }
 
-async function fetchLatestArticles(category, withCommunity) {
+async function fetchLatestArticles(
+  category,
+  { withCommunity = true, withEngagement = true } = {},
+) {
+  const engagementFields = withEngagement
+    ? `,
+      view_count,
+      blog_likes (count)`
+    : "";
+
   const selectFields = withCommunity
     ? `
       blog_id,
@@ -388,7 +452,7 @@ async function fetchLatestArticles(category, withCommunity) {
       created_at,
       cover_image,
       category,
-      community_id,
+      community_id${engagementFields},
       profiles (
         name,
         avatar_url
@@ -413,7 +477,7 @@ async function fetchLatestArticles(category, withCommunity) {
       title,
       created_at,
       cover_image,
-      category,
+      category${engagementFields},
       profiles (
         name,
         avatar_url
@@ -459,6 +523,8 @@ async function fetchLatestArticles(category, withCommunity) {
     profiles: blog.profiles,
     communities: blog.communities ?? null,
     blog_coauthors: blog.blog_coauthors ?? [],
+    view_count: blog.view_count ?? 0,
+    blog_likes: blog.blog_likes ?? [],
     excerpt: buildExcerpt(contentById[blog.blog_id]),
   }));
 }

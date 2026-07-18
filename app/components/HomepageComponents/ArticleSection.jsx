@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ArticleCard from "./ArticleCard";
 import ArticleFilters from "./Filters";
 import { useArticlesData } from "../../hooks/useArticleData";
+import { preloadLikedBlogIds } from "@/app/lib/supabase/likeCache";
 
 const FILTERS = [
   { label: "For You", value: "for_you" },
@@ -24,6 +25,11 @@ export default function ArticlesSection({
 }) {
   const [activeFilter, setActiveFilter] = useState("for_you");
   const { blogs, loading } = useArticlesData(activeFilter, initialBlogs);
+
+  useEffect(() => {
+    if (!blogs?.length) return;
+    preloadLikedBlogIds(blogs.map((b) => b.blog_id)).catch(() => {});
+  }, [blogs]);
 
   return (
     <section

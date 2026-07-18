@@ -40,6 +40,11 @@
   align-items: center;
 }
 
+.card .article-card-engagement {
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
 .link {
   color: #2563eb;
   text-decoration: none;
