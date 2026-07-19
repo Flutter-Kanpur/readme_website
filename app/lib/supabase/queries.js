@@ -46,6 +46,7 @@ export async function getProfileById(userId) {
 const AUTHOR_BLOG_LIST_FIELDS = `
   blog_id,
   title,
+  excerpt,
   created_at,
   cover_image,
   category,
@@ -57,6 +58,7 @@ const AUTHOR_BLOG_LIST_FIELDS = `
 const AUTHOR_BLOG_LIST_FIELDS_FALLBACK = `
   blog_id,
   title,
+  excerpt,
   created_at,
   cover_image,
   category,
@@ -433,12 +435,18 @@ export async function getLatestArticle(category = "for_you") {
       msg.includes("pgrst200") ||
       (msg.includes("relationship") &&
         (msg.includes("blog_likes") || msg.includes("view_count")));
+    const missingExcerpt =
+      msg.includes("excerpt") &&
+      (msg.includes("column") ||
+        msg.includes("schema cache") ||
+        msg.includes("does not exist"));
 
-    if (missingCommunity || missingEngagement) {
+    if (missingCommunity || missingEngagement || missingExcerpt) {
       try {
         return await fetchLatestArticles(category, {
           withCommunity: !missingCommunity,
           withEngagement: !missingEngagement,
+          withExcerpt: !missingExcerpt,
         });
       } catch (fallbackError) {
         const fallbackMsg = fallbackError?.message?.toLowerCase() ?? "";
@@ -446,11 +454,13 @@ export async function getLatestArticle(category = "for_you") {
           fallbackMsg.includes("blog_likes") ||
           fallbackMsg.includes("view_count") ||
           fallbackMsg.includes("communities") ||
-          fallbackMsg.includes("blog_coauthors")
+          fallbackMsg.includes("blog_coauthors") ||
+          fallbackMsg.includes("excerpt")
         ) {
           return fetchLatestArticles(category, {
             withCommunity: false,
             withEngagement: false,
+            withExcerpt: false,
           });
         }
         throw fallbackError;
@@ -462,18 +472,19 @@ export async function getLatestArticle(category = "for_you") {
 
 async function fetchLatestArticles(
   category,
-  { withCommunity = true, withEngagement = true } = {},
+  { withCommunity = true, withEngagement = true, withExcerpt = true } = {},
 ) {
   const engagementFields = withEngagement
     ? `,
       view_count,
       blog_likes (count)`
     : "";
+  const excerptField = withExcerpt ? `,\n      excerpt` : "";
 
   const selectFields = withCommunity
     ? `
       blog_id,
-      title,
+      title${excerptField},
       created_at,
       cover_image,
       category,
@@ -499,7 +510,7 @@ async function fetchLatestArticles(
     `
     : `
       blog_id,
-      title,
+      title${excerptField},
       created_at,
       cover_image,
       category${engagementFields},
@@ -521,11 +532,29 @@ async function fetchLatestArticles(
     query = query.eq("category", category);
   }
 
-  // List cards: never select `content` (full HTML is the biggest egress cost).
+  // List cards: prefer short `excerpt`; never select full `content` in the main query.
   const { data: blogs, error } = await query.limit(3);
 
   if (error) throw error;
   if (!blogs?.length) return [];
+
+  const excerptById = Object.fromEntries(
+    blogs.map((blog) => [blog.blog_id, blog.excerpt || ""]),
+  );
+  const missingIds = blogs
+    .filter((blog) => !excerptById[blog.blog_id])
+    .map((blog) => blog.blog_id);
+
+  // Tiny list only (≤3): fill missing excerpts until DB backfill is done.
+  if (missingIds.length > 0) {
+    const { data: contentRows } = await supabase
+      .from("blogs")
+      .select("blog_id, content")
+      .in("blog_id", missingIds);
+    for (const row of contentRows ?? []) {
+      excerptById[row.blog_id] = buildExcerpt(row.content);
+    }
+  }
 
   return blogs.map((blog) => ({
     blog_id: blog.blog_id,
@@ -539,6 +568,6 @@ async function fetchLatestArticles(
     blog_coauthors: blog.blog_coauthors ?? [],
     view_count: blog.view_count ?? 0,
     blog_likes: blog.blog_likes ?? [],
-    excerpt: "",
+    excerpt: excerptById[blog.blog_id] || "",
   }));
 }

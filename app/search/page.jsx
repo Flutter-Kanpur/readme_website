@@ -12,6 +12,7 @@ const SEARCH_LIMIT = 20;
 const SEARCH_SELECT = `
   blog_id,
   title,
+  excerpt,
   category,
   cover_image,
   created_at,
@@ -26,6 +27,7 @@ const SEARCH_SELECT = `
 const SEARCH_SELECT_FALLBACK = `
   blog_id,
   title,
+  excerpt,
   category,
   cover_image,
   created_at,
@@ -39,7 +41,7 @@ function mapSearchRows(rows) {
   return (rows || []).map((article) => ({
     ...article,
     cover_image: sanitizeCoverImage(article.cover_image),
-    excerpt: "",
+    excerpt: article.excerpt || "",
   }));
 }
 

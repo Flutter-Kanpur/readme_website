@@ -316,6 +316,7 @@ export async function getCommunityPublishedBlogs(communityId, { limit = 30 } = {
       .select(`
         blog_id,
         title,
+        excerpt,
         created_at,
         cover_image,
         category,
@@ -348,6 +349,7 @@ export async function getCommunityPublishedBlogs(communityId, { limit = 30 } = {
         .select(`
           blog_id,
           title,
+          excerpt,
           created_at,
           cover_image,
           category,

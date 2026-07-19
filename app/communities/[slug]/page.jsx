@@ -60,7 +60,7 @@ export default async function CommunityProfilePage({ params }) {
     blog_coauthors: blog.blog_coauthors ?? [],
     view_count: blog.view_count ?? 0,
     blog_likes: blog.blog_likes ?? [],
-    excerpt: "",
+    excerpt: blog.excerpt || "",
   }));
 
   return (
