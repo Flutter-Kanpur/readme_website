@@ -10,7 +10,7 @@ import { parseViewCount } from "@/app/lib/supabase/views";
 import RelatedArticlesSection from "./RelatedArticlesSection";
 import RelatedArticlesSidebarSkeleton from "./RelatedArticlesSidebarSkeleton";
 import AuthorCardSection from "./AuthorCardSection";
-import SidebarAd from "./SidebarAd";
+// import SidebarAd from "./SidebarAd";
 import ArticleEngagement from "./ArticleEngagement";
 import "./styles.css";
 
@@ -76,7 +76,7 @@ export default async function ArticlePage({ params }) {
 
           <aside className="article-sidebar">
             <AuthorCardSection authors={allAuthors} />
-            <SidebarAd />
+            {/* <SidebarAd /> */}
             <Suspense fallback={<RelatedArticlesSidebarSkeleton />}>
               <RelatedArticlesSection
                 authorId={blog.author_id}
