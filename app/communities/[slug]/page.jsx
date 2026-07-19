@@ -37,12 +37,15 @@ export default async function CommunityProfilePage({ params }) {
 
   const [blogs, memberCount, newsletters, subscriberCount, followerCount] =
     await Promise.all([
-    getCommunityPublishedBlogs(community.id),
-    getCommunityMemberCount(community.id),
-    getCommunityNewsletters(community.id, { limit: 6 }),
-    getCommunityNewsletterSubscriberCount(community.id),
-    getCommunityFollowerCount(community.id),
-  ]);
+      getCommunityPublishedBlogs(community.id).catch((err) => {
+        console.error("getCommunityPublishedBlogs:", err);
+        return [];
+      }),
+      getCommunityMemberCount(community.id).catch(() => 0),
+      getCommunityNewsletters(community.id, { limit: 6 }).catch(() => []),
+      getCommunityNewsletterSubscriberCount(community.id).catch(() => 0),
+      getCommunityFollowerCount(community.id).catch(() => 0),
+    ]);
 
   const articles = blogs.map((blog) => ({
     blog_id: blog.blog_id,

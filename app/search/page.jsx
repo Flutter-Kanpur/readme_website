@@ -27,7 +27,6 @@ const SEARCH_SELECT = `
 const SEARCH_SELECT_FALLBACK = `
   blog_id,
   title,
-  excerpt,
   category,
   cover_image,
   created_at,

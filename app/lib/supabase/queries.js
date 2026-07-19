@@ -421,6 +421,7 @@ export async function getLatestArticle(category = "for_you") {
     return await fetchLatestArticles(category, {
       withCommunity: true,
       withEngagement: true,
+      withExcerpt: true,
     });
   } catch (error) {
     const msg = error?.message?.toLowerCase() ?? "";
@@ -439,7 +440,8 @@ export async function getLatestArticle(category = "for_you") {
       msg.includes("excerpt") &&
       (msg.includes("column") ||
         msg.includes("schema cache") ||
-        msg.includes("does not exist"));
+        msg.includes("does not exist") ||
+        msg.includes("pgrst204"));
 
     if (missingCommunity || missingEngagement || missingExcerpt) {
       try {
@@ -463,10 +465,12 @@ export async function getLatestArticle(category = "for_you") {
             withExcerpt: false,
           });
         }
-        throw fallbackError;
+        console.error("getLatestArticle fallback error:", fallbackError);
+        return [];
       }
     }
-    throw error;
+    console.error("getLatestArticle error:", error);
+    return [];
   }
 }
 

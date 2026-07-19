@@ -310,25 +310,41 @@ export async function getCommunityMembers(communityId) {
 export async function getCommunityPublishedBlogs(communityId, { limit = 30 } = {}) {
   if (!communityId) return [];
 
+  const listSelect = `
+    blog_id,
+    title,
+    excerpt,
+    created_at,
+    cover_image,
+    category,
+    author_id,
+    view_count,
+    blog_likes (count),
+    profiles ( name, avatar_url ),
+    blog_coauthors (
+      user_id,
+      profiles ( id, name, avatar_url )
+    )
+  `;
+
+  const listSelectFallback = `
+    blog_id,
+    title,
+    created_at,
+    cover_image,
+    category,
+    author_id,
+    profiles ( name, avatar_url ),
+    blog_coauthors (
+      user_id,
+      profiles ( id, name, avatar_url )
+    )
+  `;
+
   try {
     const { data, error } = await supabase
       .from('blogs')
-      .select(`
-        blog_id,
-        title,
-        excerpt,
-        created_at,
-        cover_image,
-        category,
-        author_id,
-        view_count,
-        blog_likes (count),
-        profiles ( name, avatar_url ),
-        blog_coauthors (
-          user_id,
-          profiles ( id, name, avatar_url )
-        )
-      `)
+      .select(listSelect)
       .eq('community_id', communityId)
       .eq('is_published', true)
       .order('created_at', { ascending: false })
@@ -342,24 +358,12 @@ export async function getCommunityPublishedBlogs(communityId, { limit = 30 } = {
       msg.includes('blog_likes') ||
       msg.includes('view_count') ||
       msg.includes('relationship') ||
-      msg.includes('schema cache')
+      msg.includes('schema cache') ||
+      msg.includes('excerpt')
     ) {
       const { data, error: fallbackError } = await supabase
         .from('blogs')
-        .select(`
-          blog_id,
-          title,
-          excerpt,
-          created_at,
-          cover_image,
-          category,
-          author_id,
-          profiles ( name, avatar_url ),
-          blog_coauthors (
-            user_id,
-            profiles ( id, name, avatar_url )
-          )
-        `)
+        .select(listSelectFallback)
         .eq('community_id', communityId)
         .eq('is_published', true)
         .order('created_at', { ascending: false })
