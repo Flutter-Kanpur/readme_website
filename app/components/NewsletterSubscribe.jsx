@@ -23,6 +23,10 @@ export default function NewsletterSubscribe({
   const [subscriberCount, setSubscriberCount] = useState(initialSubscriberCount);
 
   useEffect(() => {
+    setSubscriberCount(initialSubscriberCount);
+  }, [initialSubscriberCount]);
+
+  useEffect(() => {
     let cancelled = false;
     async function load() {
       const safeUser = await getSafeUser();

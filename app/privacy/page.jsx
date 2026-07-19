@@ -1,6 +1,6 @@
 import StaticPage from "@/components/StaticPage/StaticPage";
 
-const CONTACT_EMAIL = "hello@flutterkanpur.in";
+const CONTACT_EMAIL = "readme.flutterkanpur@gmail.com";
 const LAST_UPDATED = "July 18, 2026";
 
 export default function PrivacyPage() {

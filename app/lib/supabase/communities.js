@@ -663,14 +663,33 @@ export async function unsubscribeFromNewsletter(communityId) {
 export async function getCommunityNewsletterSubscriberCount(communityId) {
   if (!communityId) return 0;
 
-  const { count, error } = await supabase
-    .from('community_newsletter_subscribers')
-    .select('*', { count: 'exact', head: true })
-    .eq('community_id', communityId);
+  const { data, error } = await supabase.rpc(
+    'get_community_newsletter_subscriber_count',
+    { p_community_id: communityId },
+  );
 
   if (error) {
-    if (isCommunitiesUnavailable(error)) return 0;
-    throw error;
+    // Fallback for environments where the RPC is not deployed yet.
+    // Direct table count is RLS-limited (usually 0 for public visitors).
+    const { count, error: countError } = await supabase
+      .from('community_newsletter_subscribers')
+      .select('*', { count: 'exact', head: true })
+      .eq('community_id', communityId);
+
+    if (countError) {
+      if (isCommunitiesUnavailable(countError) || isCommunitiesUnavailable(error)) {
+        return 0;
+      }
+      console.warn(
+        '[newsletter] subscriber count unavailable:',
+        error.message || countError.message,
+      );
+      return 0;
+    }
+    return count ?? 0;
   }
-  return count ?? 0;
+
+  if (typeof data === 'number') return data;
+  if (typeof data === 'string') return parseInt(data, 10) || 0;
+  return 0;
 }

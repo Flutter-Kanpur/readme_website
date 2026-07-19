@@ -76,7 +76,17 @@ export default function useBlogSupport(
             '[likes] Table not found. Run supabase/migrations/011_blog_likes.sql in Supabase.',
           );
         } else {
-          console.error('useBlogSupport load error:', formatLikeError(error));
+          const msg = formatLikeError(error).toLowerCase();
+          // Anonymous visitors should not surface auth noise.
+          if (
+            !msg.includes('auth session missing') &&
+            !msg.includes('session missing')
+          ) {
+            console.error('useBlogSupport load error:', formatLikeError(error));
+          }
+        }
+        if (!cancelled) {
+          setIsLiked(false);
         }
       } finally {
         if (!cancelled) setIsLoading(false);

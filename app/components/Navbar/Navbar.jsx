@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import BottomNav from "./BottomNav";
+import rawIcon from "@/app/raw-icon.png";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
@@ -208,14 +210,14 @@ export default function Navbar({ hideBottomNav = false, plain = false } = {}) {
             href="/"
             className="navbar-pill__start gap-2.5 transition-transform active:scale-95"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-black p-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/assets/icons/logo.svg"
+            <span className="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-black">
+              <Image
+                src={rawIcon}
                 alt=""
-                width={40}
-                height={40}
-                className="block h-5 w-5 max-h-5 max-w-5 object-contain"
+                fill
+                sizes="32px"
+                className="object-cover"
+                priority
               />
             </span>
             <span className="navbar-pill__brand shrink-0">Readme</span>

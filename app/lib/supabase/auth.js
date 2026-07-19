@@ -10,6 +10,16 @@ export function isInvalidRefreshTokenError(error) {
   );
 }
 
+/** Logged-out / no local session — not an unexpected failure. */
+export function isMissingAuthSessionError(error) {
+  if (!error?.message) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('auth session missing') ||
+    message.includes('session missing')
+  );
+}
+
 /** Clear broken local auth state without requiring a valid refresh token. */
 export async function clearStaleAuthSession() {
   if (typeof window === 'undefined') return;
@@ -37,6 +47,10 @@ export async function getSafeUser() {
         await clearStaleAuthSession();
         return null;
       }
+      // No session is normal for anonymous visitors.
+      if (isMissingAuthSessionError(error)) {
+        return null;
+      }
       throw error;
     }
 
@@ -61,6 +75,9 @@ export async function getSafeSession() {
     if (error) {
       if (isInvalidRefreshTokenError(error)) {
         await clearStaleAuthSession();
+        return null;
+      }
+      if (isMissingAuthSessionError(error)) {
         return null;
       }
       throw error;

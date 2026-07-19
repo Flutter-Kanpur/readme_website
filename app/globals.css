@@ -60,9 +60,10 @@ body {
     background-color: #ffffff;
   }
 
-  /* Footer carries its own bottom-nav clearance — avoid doubling the gap. */
+  /* Footer already pads for the bottom nav (dark grey). Extra
+     #app-scroll padding here showed up as a white strip under the footer. */
   #app-scroll:has(footer.footer-wrapper) {
-    padding-bottom: 70px;
+    padding-bottom: 0;
   }
 
   html {
