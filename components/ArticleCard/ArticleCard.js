@@ -23,9 +23,14 @@ export default function ArticleCard({ blog }) {
 
         <h1 className="title">{blog.title}</h1>
 
-        <p className="desc">
-          {htmlToText(blog.content).slice(0, 120)}...
-        </p>
+        {(blog.excerpt || blog.content) && (
+          <p className="desc">
+            {blog.excerpt ||
+              `${htmlToText(blog.content).slice(0, 120)}${
+                htmlToText(blog.content).length > 120 ? "..." : ""
+              }`}
+          </p>
+        )}
 
         <ArticleCardEngagement blog={blog} />
 

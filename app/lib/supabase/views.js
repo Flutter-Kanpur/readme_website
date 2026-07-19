@@ -72,14 +72,16 @@ function markViewed(blogId) {
 /**
  * Increments the server counter once per device per blog per 24h
  * (matches Flutter BlogViewDatasource + SharedPreferences key).
- * Returns the latest count, or null if the feature is unavailable.
+ * Returns the latest count, or null if skipped/unavailable.
+ * When already viewed in the last 24h, returns null without a network call
+ * so the UI keeps its embedded count (egress).
  */
 export async function recordView(blogId) {
   if (!blogId) return null;
 
   try {
     if (wasViewedRecently(blogId)) {
-      return fetchViewCount(blogId);
+      return null;
     }
 
     const { data, error } = await supabase.rpc('increment_blog_view', {

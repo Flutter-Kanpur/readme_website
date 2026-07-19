@@ -26,10 +26,10 @@ export default function DraftsPage() {
 
         setUser(user);
 
-        // Fetch drafts for the current user
+        // Narrow select — skip cover_image base64 and unused columns (egress).
         const { data, error } = await supabase
           .from('blogs')
-          .select('*')
+          .select('blog_id, title, content, category, created_at')
           .eq('author_id', user.id)
           .eq('is_published', false)
           .order('created_at', { ascending: false });

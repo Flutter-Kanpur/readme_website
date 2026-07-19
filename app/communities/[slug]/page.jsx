@@ -12,7 +12,7 @@ import {
   getCommunityNewsletterSubscriberCount,
 } from "@/app/lib/supabase/communities";
 import { getCommunityFollowerCount } from "@/app/lib/supabase/communityFollows";
-import { sanitizeCoverImage, buildExcerpt } from "@/app/lib/supabase/queries";
+import { sanitizeCoverImage } from "@/app/lib/supabase/queries";
 import CommunityProfileHero from "./CommunityProfileHero";
 import "../communities.css";
 
@@ -60,7 +60,7 @@ export default async function CommunityProfilePage({ params }) {
     blog_coauthors: blog.blog_coauthors ?? [],
     view_count: blog.view_count ?? 0,
     blog_likes: blog.blog_likes ?? [],
-    excerpt: buildExcerpt(blog.content),
+    excerpt: "",
   }));
 
   return (

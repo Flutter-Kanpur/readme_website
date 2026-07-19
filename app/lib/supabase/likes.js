@@ -28,13 +28,23 @@ export function isLikesUnavailable(error) {
 export function parseLikeCount(blog) {
   if (!blog) return 0;
   const direct = blog.like_count;
-  if (typeof direct === 'number') return direct;
+  if (typeof direct === 'number' && !Number.isNaN(direct)) return direct;
   if (typeof direct === 'string') return parseInt(direct, 10) || 0;
 
   const likes = blog.blog_likes;
   if (Array.isArray(likes) && likes.length > 0) {
-    const count = likes[0]?.count;
-    if (typeof count === 'number') return count;
+    const first = likes[0];
+    if (typeof first === 'number') return first;
+    if (first && typeof first === 'object') {
+      const count = first.count;
+      if (typeof count === 'number' && !Number.isNaN(count)) return count;
+      if (typeof count === 'string') return parseInt(count, 10) || 0;
+    }
+  }
+  // Rare shape: { count: N } instead of [{ count: N }]
+  if (likes && typeof likes === 'object' && !Array.isArray(likes)) {
+    const count = likes.count;
+    if (typeof count === 'number' && !Number.isNaN(count)) return count;
     if (typeof count === 'string') return parseInt(count, 10) || 0;
   }
   return 0;

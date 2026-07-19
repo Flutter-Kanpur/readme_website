@@ -14,19 +14,31 @@ import {
 
 /**
  * Support (like) state for a blog — mirrors Flutter BlogSupportButton.
- * Auth-gated; redirects to /login when unauthenticated.
+ *
+ * List cards (compact): trust embedded like counts + likeCache to avoid
+ * per-card Supabase round-trips (egress).
+ * Detail (expanded): refresh count + liked state once.
  */
 export default function useBlogSupport(
   blogId,
-  { initialLikeCount = 0, initialIsLiked = null, compact = false } = {},
+  {
+    initialLikeCount = 0,
+    initialIsLiked = null,
+    compact = false,
+    refreshCount = !compact,
+  } = {},
 ) {
   const router = useRouter();
   const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [isLiked, setIsLiked] = useState(Boolean(initialIsLiked));
   const [isLoading, setIsLoading] = useState(
-    !(compact && initialIsLiked != null),
+    !(compact && (initialIsLiked != null || !refreshCount)),
   );
   const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    setLikeCount(initialLikeCount);
+  }, [initialLikeCount]);
 
   useEffect(() => {
     if (!blogId) {
@@ -34,9 +46,10 @@ export default function useBlogSupport(
       return;
     }
 
-    if (compact && initialIsLiked != null) {
-      setLikeCount(initialLikeCount);
+    // Compact list cards: use SSR/list embeds + cache only (no N+1 egress).
+    if (compact && !refreshCount) {
       setIsLiked(Boolean(initialIsLiked));
+      setLikeCount(initialLikeCount);
       setIsLoading(false);
       return;
     }
@@ -46,30 +59,30 @@ export default function useBlogSupport(
     async function load() {
       setIsLoading(true);
       try {
-        if (compact) {
-          let user = null;
-          try {
-            user = await getSafeUser();
-          } catch {
-            user = null;
-          }
-          if (cancelled) return;
-          if (!user) {
-            setIsLiked(false);
-            return;
-          }
-          const liked = await isLikedByUser(blogId);
-          if (!cancelled) setIsLiked(liked);
-          return;
+        const countPromise = refreshCount
+          ? fetchLikeCount(blogId)
+          : Promise.resolve(initialLikeCount);
+
+        let user = null;
+        try {
+          user = await getSafeUser();
+        } catch {
+          user = null;
         }
 
-        const [count, liked] = await Promise.all([
-          fetchLikeCount(blogId),
-          isLikedByUser(blogId),
-        ]);
         if (cancelled) return;
-        setLikeCount(count);
-        setIsLiked(liked);
+
+        if (initialIsLiked != null) {
+          setIsLiked(Boolean(initialIsLiked));
+        } else if (!user) {
+          setIsLiked(false);
+        } else {
+          const liked = await isLikedByUser(blogId);
+          if (!cancelled) setIsLiked(liked);
+        }
+
+        const count = await countPromise;
+        if (!cancelled) setLikeCount(count);
       } catch (error) {
         if (isLikesUnavailable(error)) {
           console.warn(
@@ -77,7 +90,6 @@ export default function useBlogSupport(
           );
         } else {
           const msg = formatLikeError(error).toLowerCase();
-          // Anonymous visitors should not surface auth noise.
           if (
             !msg.includes('auth session missing') &&
             !msg.includes('session missing')
@@ -86,7 +98,8 @@ export default function useBlogSupport(
           }
         }
         if (!cancelled) {
-          setIsLiked(false);
+          setIsLiked(Boolean(initialIsLiked));
+          setLikeCount(initialLikeCount);
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -97,7 +110,7 @@ export default function useBlogSupport(
     return () => {
       cancelled = true;
     };
-  }, [blogId, compact, initialIsLiked, initialLikeCount]);
+  }, [blogId, compact, initialIsLiked, initialLikeCount, refreshCount]);
 
   const toggleSupport = useCallback(async () => {
     if (!blogId || actionLoading) return;
@@ -118,9 +131,7 @@ export default function useBlogSupport(
     const previousCount = likeCount;
 
     setIsLiked(!wasLiked);
-    setLikeCount(
-      wasLiked ? Math.max(0, likeCount - 1) : likeCount + 1,
-    );
+    setLikeCount(wasLiked ? Math.max(0, likeCount - 1) : likeCount + 1);
     setActionLoading(true);
 
     try {

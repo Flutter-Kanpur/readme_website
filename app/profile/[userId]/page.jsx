@@ -9,7 +9,6 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   getProfileById,
   getPublishedBlogsByAuthor,
-  getAuthorByBlogId
 } from '@/app/lib/supabase/queries'
 import { getSafeUser } from '@/app/lib/supabase/auth'
 import { getFollowStats } from '@/app/lib/supabase/follows'
@@ -69,15 +68,18 @@ export default function ProfilePage() {
           refreshFollowStats(),
         ])
 
-        const blogsWithAuthors = await Promise.all(
-          blogsData.map(async (blog) => {
-            const author = await getAuthorByBlogId(blog.blog_id)
-            return {
-              ...blog,
-              author
-            }
-          })
-        )
+        // Same author for every row — avoid N+1 getAuthorByBlogId (egress).
+        const author = {
+          authorId: profileData.id,
+          name: profileData.name,
+          avatar_url: profileData.avatar_url,
+          headline: profileData.headline,
+          bio: profileData.bio,
+        }
+        const blogsWithAuthors = (blogsData || []).map((blog) => ({
+          ...blog,
+          author,
+        }))
 
         setBlogs(blogsWithAuthors)
         setLoggedInUser(user)

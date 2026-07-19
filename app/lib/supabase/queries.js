@@ -43,16 +43,38 @@ export async function getProfileById(userId) {
 }
 
 
-export async function getPublishedBlogsByAuthor(authorId) {
+const AUTHOR_BLOG_LIST_FIELDS = `
+  blog_id,
+  title,
+  created_at,
+  cover_image,
+  category,
+  author_id,
+  view_count,
+  blog_likes (count)
+`
+
+const AUTHOR_BLOG_LIST_FIELDS_FALLBACK = `
+  blog_id,
+  title,
+  created_at,
+  cover_image,
+  category,
+  author_id
+`
+
+/** Published blogs for a profile page — no full HTML content (egress). */
+export async function getPublishedBlogsByAuthor(authorId, { limit = 50 } = {}) {
   if (!authorId) return []
 
   try {
     const { data, error } = await supabase
       .from('blogs')
-      .select('*, blog_likes (count)')
+      .select(AUTHOR_BLOG_LIST_FIELDS)
       .eq('author_id', authorId)
       .eq('is_published', true)
       .order('created_at', { ascending: false })
+      .limit(limit)
 
     if (error) throw error
 
@@ -70,10 +92,11 @@ export async function getPublishedBlogsByAuthor(authorId) {
     ) {
       const { data, error: fallbackError } = await supabase
         .from('blogs')
-        .select('*')
+        .select(AUTHOR_BLOG_LIST_FIELDS_FALLBACK)
         .eq('author_id', authorId)
         .eq('is_published', true)
         .order('created_at', { ascending: false })
+        .limit(limit)
 
       if (fallbackError) {
         console.error('getPublishedBlogsByAuthor error:', fallbackError)
@@ -402,12 +425,14 @@ export async function getLatestArticle(category = "for_you") {
     const missingCommunity =
       msg.includes("communities") ||
       msg.includes("blog_coauthors") ||
-      msg.includes("schema cache");
+      (msg.includes("schema cache") &&
+        (msg.includes("communities") || msg.includes("blog_coauthors")));
     const missingEngagement =
       msg.includes("blog_likes") ||
       msg.includes("view_count") ||
-      msg.includes("relationship") ||
-      msg.includes("pgrst200");
+      msg.includes("pgrst200") ||
+      (msg.includes("relationship") &&
+        (msg.includes("blog_likes") || msg.includes("view_count")));
 
     if (missingCommunity || missingEngagement) {
       try {
@@ -496,22 +521,11 @@ async function fetchLatestArticles(
     query = query.eq("category", category);
   }
 
+  // List cards: never select `content` (full HTML is the biggest egress cost).
   const { data: blogs, error } = await query.limit(3);
 
   if (error) throw error;
   if (!blogs?.length) return [];
-
-  const ids = blogs.map((b) => b.blog_id);
-  const { data: contentRows, error: contentError } = await supabase
-    .from("blogs")
-    .select("blog_id, content")
-    .in("blog_id", ids);
-
-  if (contentError) throw contentError;
-
-  const contentById = Object.fromEntries(
-    (contentRows ?? []).map((row) => [row.blog_id, row.content]),
-  );
 
   return blogs.map((blog) => ({
     blog_id: blog.blog_id,
@@ -525,6 +539,6 @@ async function fetchLatestArticles(
     blog_coauthors: blog.blog_coauthors ?? [],
     view_count: blog.view_count ?? 0,
     blog_likes: blog.blog_likes ?? [],
-    excerpt: buildExcerpt(contentById[blog.blog_id]),
+    excerpt: "",
   }));
 }

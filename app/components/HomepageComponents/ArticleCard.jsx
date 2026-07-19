@@ -110,9 +110,11 @@ export default function ArticleCard({ article }) {
             {title}
           </h3>
 
-          <p className="text-sm md:text-base text-gray-500 line-clamp-3 md:line-clamp-2 leading-relaxed">
-            {preview || "No description available."}
-          </p>
+          {preview ? (
+            <p className="text-sm md:text-base text-gray-500 line-clamp-3 md:line-clamp-2 leading-relaxed">
+              {preview}
+            </p>
+          ) : null}
 
           <ArticleCardEngagement article={article} />
         </div>

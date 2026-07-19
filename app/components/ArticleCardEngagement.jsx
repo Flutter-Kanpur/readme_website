@@ -56,8 +56,8 @@ function EyeIcon() {
 }
 
 /**
- * Compact Support + view count for list cards (matches Flutter compact mode).
- * Stops click propagation so parent Links do not navigate on Support tap.
+ * Compact Support + view count for list cards.
+ * Uses embedded list counts only — no per-card Supabase fetches (egress).
  */
 export default function ArticleCardEngagement({ article, blog }) {
   const row = article ?? blog;
@@ -72,6 +72,7 @@ export default function ArticleCardEngagement({ article, blog }) {
       initialLikeCount,
       initialIsLiked: cached,
       compact: true,
+      refreshCount: false,
     });
 
   useEffect(() => {

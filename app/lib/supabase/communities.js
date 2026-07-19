@@ -307,7 +307,7 @@ export async function getCommunityMembers(communityId) {
   }));
 }
 
-export async function getCommunityPublishedBlogs(communityId) {
+export async function getCommunityPublishedBlogs(communityId, { limit = 30 } = {}) {
   if (!communityId) return [];
 
   try {
@@ -316,7 +316,6 @@ export async function getCommunityPublishedBlogs(communityId) {
       .select(`
         blog_id,
         title,
-        content,
         created_at,
         cover_image,
         category,
@@ -331,7 +330,8 @@ export async function getCommunityPublishedBlogs(communityId) {
       `)
       .eq('community_id', communityId)
       .eq('is_published', true)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (error) throw error;
     return data ?? [];
@@ -348,7 +348,6 @@ export async function getCommunityPublishedBlogs(communityId) {
         .select(`
           blog_id,
           title,
-          content,
           created_at,
           cover_image,
           category,
@@ -361,7 +360,8 @@ export async function getCommunityPublishedBlogs(communityId) {
         `)
         .eq('community_id', communityId)
         .eq('is_published', true)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
       if (fallbackError) throw fallbackError;
       return data ?? [];
@@ -499,7 +499,17 @@ export function canPublishNewsletter(role) {
   return role === 'admin' || role === 'editor';
 }
 
-const NEWSLETTER_SELECT = `
+const NEWSLETTER_LIST_SELECT = `
+  id,
+  title,
+  file_url,
+  file_name,
+  file_size_bytes,
+  created_at,
+  author:profiles ( id, name, avatar_url )
+`;
+
+const NEWSLETTER_DETAIL_SELECT = `
   id,
   title,
   body,
@@ -515,7 +525,7 @@ export async function getCommunityNewsletters(communityId, { limit } = {}) {
 
   let query = supabase
     .from('community_newsletters')
-    .select(NEWSLETTER_SELECT)
+    .select(NEWSLETTER_LIST_SELECT)
     .eq('community_id', communityId)
     .order('created_at', { ascending: false });
 
@@ -534,7 +544,7 @@ export async function getCommunityNewsletter(newsletterId) {
 
   const { data, error } = await supabase
     .from('community_newsletters')
-    .select(`${NEWSLETTER_SELECT}, community_id`)
+    .select(`${NEWSLETTER_DETAIL_SELECT}, community_id`)
     .eq('id', newsletterId)
     .maybeSingle();
 
