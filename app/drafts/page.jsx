@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar/Navbar';
 import { supabase } from '@/app/lib/supabase/index';
 import { getSafeUser } from '@/app/lib/supabase/auth';
 import './drafts.css';
+import { withBasePath } from '@/app/lib/basePath';
 
 export default function DraftsPage() {
   const [drafts, setDrafts] = useState([]);
@@ -152,7 +153,7 @@ export default function DraftsPage() {
 
         {drafts.length === 0 ? (
           <div className="no-drafts">
-            <img src="/assets/icons/empty.svg" alt="empty"
+            <img src={withBasePath('/assets/icons/empty.svg')} alt="empty"
               height={300}
               width={300}
               className="mx-auto"

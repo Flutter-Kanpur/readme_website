@@ -3,6 +3,7 @@ import './styles.css'
 import { useState } from 'react'
 import { supabase } from '@/app/lib/supabase/index'
 import { getSafeUser } from '@/app/lib/supabase/auth'
+import { withBasePath } from '@/app/lib/basePath'
 
 export default function PreferencesCard({ profile }) {
 
@@ -36,7 +37,7 @@ export default function PreferencesCard({ profile }) {
     }
     setLoading(false)
     await supabase.auth.signOut()
-    window.location.href = '/'
+    window.location.href = withBasePath('/')
   }
 
 

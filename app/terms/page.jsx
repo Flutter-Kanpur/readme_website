@@ -1,4 +1,5 @@
 import StaticPage from "@/components/StaticPage/StaticPage";
+import Link from "next/link";
 
 const CONTACT_EMAIL = "readme.flutterkanpur@gmail.com";
 const LAST_UPDATED = "July 19, 2026";
@@ -20,9 +21,9 @@ export default function TermsPage() {
       <p>
         By creating an account, accessing, or using Readme, you agree to these
         Terms and our{" "}
-        <a href="/privacy" className="text-blue-600 hover:underline">
+        <Link href="/privacy" className="text-blue-600 hover:underline">
           Privacy Policy
-        </a>
+        </Link>
         . If you do not agree, do not use the Service.
       </p>
 

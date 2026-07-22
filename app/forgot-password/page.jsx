@@ -7,6 +7,7 @@ import LeftPanel from "@/components/auth/LeftPanel";
 import PrimaryButton from "@/components/auth/PrimaryButton";
 import styles from "@/styles/auth.module.css";
 import { supabase } from "@/app/lib/supabase";
+import { absoluteAppUrl } from "@/app/lib/basePath";
 
 function mapResetError(error) {
   const msg = (error?.message || "").toLowerCase();
@@ -32,7 +33,7 @@ export default function ForgotPassword() {
       const { error } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
         {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: absoluteAppUrl("/reset-password"),
         },
       );
 

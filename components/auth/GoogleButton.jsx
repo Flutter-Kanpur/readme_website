@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { supabase } from "@/app/lib/supabase";
+import { absoluteAppUrl } from "@/app/lib/basePath";
 
 const GOOGLE_ICON_SRC = "/assets/icons/google.svg";
 
@@ -10,7 +11,7 @@ export default function GoogleButton({ disabled = false }) {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin + "/",
+        redirectTo: absoluteAppUrl("/"),
       },
     });
   };
