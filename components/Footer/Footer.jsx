@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { PLAY_STORE_URL } from "@/app/lib/playStore";
 import rawIcon from "@/app/raw-icon.png";
+import googlePlayIcon from "@/public/assets/icons/google-play.png";
 import "./styles.css";
 
 const EXPLORE_LINKS = [
@@ -98,7 +99,7 @@ export default function Footer() {
               className="footer-play"
             >
               <Image
-                src="/assets/icons/google-play.png"
+                src={googlePlayIcon}
                 alt=""
                 width={40}
                 height={40}

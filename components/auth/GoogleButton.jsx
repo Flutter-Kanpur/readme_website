@@ -3,8 +3,7 @@
 import Image from "next/image";
 import { supabase } from "@/app/lib/supabase";
 import { absoluteAppUrl } from "@/app/lib/basePath";
-
-const GOOGLE_ICON_SRC = "/assets/icons/google.svg";
+import googleIcon from "@/public/assets/icons/google.svg";
 
 export default function GoogleButton({ disabled = false }) {
   const handleGoogleLogin = async () => {
@@ -39,7 +38,7 @@ export default function GoogleButton({ disabled = false }) {
       }}
     >
       <Image
-        src={GOOGLE_ICON_SRC}
+        src={googleIcon}
         alt=""
         width={20}
         height={20}
