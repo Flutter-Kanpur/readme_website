@@ -44,7 +44,7 @@ export async function preloadLikedBlogIds(blogIds) {
     return;
   }
 
-  const likedIds = await fetchLikedBlogIds(blogIds);
+  const likedIds = await fetchLikedBlogIds(blogIds, { user });
   cache.userId = user.id;
   cache.likedByBlogId = Object.fromEntries(
     blogIds.map((id) => [id, likedIds.has(id)]),

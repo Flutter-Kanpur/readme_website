@@ -48,11 +48,12 @@ const AUTHOR_BLOG_LIST_FIELDS = `
   title,
   excerpt,
   created_at,
+  published_at,
   cover_image,
   category,
   author_id,
   view_count,
-  blog_likes (count)
+  like_count
 `
 
 const AUTHOR_BLOG_LIST_FIELDS_FALLBACK = `
@@ -75,7 +76,7 @@ export async function getPublishedBlogsByAuthor(authorId, { limit = 50 } = {}) {
       .select(AUTHOR_BLOG_LIST_FIELDS)
       .eq('author_id', authorId)
       .eq('is_published', true)
-      .order('created_at', { ascending: false })
+      .order('published_at', { ascending: false, nullsFirst: false })
       .limit(limit)
 
     if (error) throw error
@@ -83,10 +84,14 @@ export async function getPublishedBlogsByAuthor(authorId, { limit = 50 } = {}) {
     return (data || []).map((blog) => ({
       ...blog,
       cover_image: sanitizeCoverImage(blog.cover_image),
+      like_count: blog.like_count ?? 0,
+      view_count: blog.view_count ?? 0,
     }))
   } catch (error) {
     const msg = error?.message?.toLowerCase() ?? ''
     if (
+      msg.includes('like_count') ||
+      msg.includes('published_at') ||
       msg.includes('blog_likes') ||
       msg.includes('view_count') ||
       msg.includes('relationship') ||
@@ -180,8 +185,10 @@ export async function getArticleWithAuthor(blogId) {
       msg.includes('blog_coauthors') ||
       msg.includes('schema cache')
     const missingEngagement =
+      msg.includes('like_count') ||
       msg.includes('blog_likes') ||
       msg.includes('view_count') ||
+      msg.includes('published_at') ||
       msg.includes('relationship') ||
       msg.includes('pgrst200')
 
@@ -194,6 +201,7 @@ export async function getArticleWithAuthor(blogId) {
       } catch (fallbackError) {
         const fallbackMsg = fallbackError?.message?.toLowerCase() ?? ''
         if (
+          fallbackMsg.includes('like_count') ||
           fallbackMsg.includes('blog_likes') ||
           fallbackMsg.includes('view_count') ||
           fallbackMsg.includes('communities') ||
@@ -231,7 +239,7 @@ async function fetchArticleWithAuthor(
   const engagementFields = withEngagement
     ? `,
       view_count,
-      blog_likes (count)`
+      like_count`
     : ''
 
   const selectFields = withCommunity
@@ -240,6 +248,7 @@ async function fetchArticleWithAuthor(
       title,
       content,
       created_at,
+      published_at,
       cover_image,
       category,
       is_published,
@@ -336,12 +345,13 @@ export async function getBlogDetailByBlogId(blogId) {
       title,
       content,
       created_at,
+      published_at,
       cover_image,
       category,
       is_published,
       author_id,
       view_count,
-      blog_likes (count)
+      like_count
     `)
     .eq('blog_id', blogId)
     .single()
@@ -350,6 +360,8 @@ export async function getBlogDetailByBlogId(blogId) {
     // Graceful fallback when likes/views schema is not deployed yet.
     const msg = error.message?.toLowerCase() ?? ''
     if (
+      msg.includes('like_count') ||
+      msg.includes('published_at') ||
       msg.includes('blog_likes') ||
       msg.includes('view_count') ||
       msg.includes('relationship')
@@ -431,6 +443,8 @@ export async function getLatestArticle(category = "for_you") {
       (msg.includes("schema cache") &&
         (msg.includes("communities") || msg.includes("blog_coauthors")));
     const missingEngagement =
+      msg.includes("like_count") ||
+      msg.includes("published_at") ||
       msg.includes("blog_likes") ||
       msg.includes("view_count") ||
       msg.includes("pgrst200") ||
@@ -449,10 +463,13 @@ export async function getLatestArticle(category = "for_you") {
           withCommunity: !missingCommunity,
           withEngagement: !missingEngagement,
           withExcerpt: !missingExcerpt,
+          orderByPublishedAt: !msg.includes("published_at"),
         });
       } catch (fallbackError) {
         const fallbackMsg = fallbackError?.message?.toLowerCase() ?? "";
         if (
+          fallbackMsg.includes("like_count") ||
+          fallbackMsg.includes("published_at") ||
           fallbackMsg.includes("blog_likes") ||
           fallbackMsg.includes("view_count") ||
           fallbackMsg.includes("communities") ||
@@ -463,6 +480,7 @@ export async function getLatestArticle(category = "for_you") {
             withCommunity: false,
             withEngagement: false,
             withExcerpt: false,
+            orderByPublishedAt: false,
           });
         }
         console.error("getLatestArticle fallback error:", fallbackError);
@@ -474,22 +492,30 @@ export async function getLatestArticle(category = "for_you") {
   }
 }
 
+const FEED_LIMIT = 20;
+
 async function fetchLatestArticles(
   category,
-  { withCommunity = true, withEngagement = true, withExcerpt = true } = {},
+  {
+    withCommunity = true,
+    withEngagement = true,
+    withExcerpt = true,
+    orderByPublishedAt = true,
+  } = {},
 ) {
   const engagementFields = withEngagement
     ? `,
       view_count,
-      blog_likes (count)`
+      like_count`
     : "";
   const excerptField = withExcerpt ? `,\n      excerpt` : "";
+  const publishedField = orderByPublishedAt ? `,\n      published_at` : "";
 
   const selectFields = withCommunity
     ? `
       blog_id,
       title${excerptField},
-      created_at,
+      created_at${publishedField},
       cover_image,
       category,
       community_id${engagementFields},
@@ -515,7 +541,7 @@ async function fetchLatestArticles(
     : `
       blog_id,
       title${excerptField},
-      created_at,
+      created_at${publishedField},
       cover_image,
       category${engagementFields},
       profiles (
@@ -528,7 +554,10 @@ async function fetchLatestArticles(
     .from("blogs")
     .select(selectFields)
     .eq("is_published", true)
-    .order("created_at", { ascending: false });
+    .order(orderByPublishedAt ? "published_at" : "created_at", {
+      ascending: false,
+      nullsFirst: false,
+    });
 
   if (category === "communities") {
     query = query.not("community_id", "is", null);
@@ -537,7 +566,7 @@ async function fetchLatestArticles(
   }
 
   // List cards: prefer short `excerpt`; never select full `content` in the main query.
-  const { data: blogs, error } = await query.limit(3);
+  const { data: blogs, error } = await query.limit(FEED_LIMIT);
 
   if (error) throw error;
   if (!blogs?.length) return [];
@@ -549,8 +578,8 @@ async function fetchLatestArticles(
     .filter((blog) => !excerptById[blog.blog_id])
     .map((blog) => blog.blog_id);
 
-  // Tiny list only (≤3): fill missing excerpts until DB backfill is done.
-  if (missingIds.length > 0) {
+  // Cap excerpt backfill to avoid large content egress (feed is ≤20).
+  if (missingIds.length > 0 && missingIds.length <= 5) {
     const { data: contentRows } = await supabase
       .from("blogs")
       .select("blog_id, content")
@@ -564,6 +593,7 @@ async function fetchLatestArticles(
     blog_id: blog.blog_id,
     title: blog.title,
     created_at: blog.created_at,
+    published_at: blog.published_at ?? null,
     cover_image: sanitizeCoverImage(blog.cover_image),
     category: blog.category,
     community_id: blog.community_id ?? null,
@@ -571,7 +601,7 @@ async function fetchLatestArticles(
     communities: blog.communities ?? null,
     blog_coauthors: blog.blog_coauthors ?? [],
     view_count: blog.view_count ?? 0,
-    blog_likes: blog.blog_likes ?? [],
+    like_count: blog.like_count ?? 0,
     excerpt: excerptById[blog.blog_id] || "",
   }));
 }

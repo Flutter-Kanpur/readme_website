@@ -7,6 +7,7 @@ import { supabase } from '@/app/lib/supabase/index';
 import { getSafeUser } from '@/app/lib/supabase/auth';
 import './drafts.css';
 import { withBasePath } from '@/app/lib/basePath';
+import { revalidateFeed } from '@/app/lib/revalidateFeed';
 
 export default function DraftsPage() {
   const [drafts, setDrafts] = useState([]);
@@ -78,11 +79,16 @@ export default function DraftsPage() {
     try {
       const { error } = await supabase
         .from('blogs')
-        .update({ is_published: true })
+        .update({
+          is_published: true,
+          published_at: new Date().toISOString(),
+        })
         .eq('blog_id', draftId)
         .eq('author_id', user.id);
 
       if (error) throw error;
+
+      await revalidateFeed();
 
       // Remove from drafts list
       setDrafts(drafts.filter(draft => draft.blog_id !== draftId));

@@ -15,6 +15,7 @@ import {
   canPublishInCommunity,
 } from "@/app/lib/supabase/communities";
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
+import { revalidateFeed } from "@/app/lib/revalidateFeed";
 import './write.css';
 
 export default function WritePage() {
@@ -95,6 +96,9 @@ export default function WritePage() {
       cover_image,
       is_published: isPublished,
       community_id: communityId || null,
+      ...(isPublished
+        ? { published_at: new Date().toISOString() }
+        : {}),
     };
 
     let blogId = draftId;
@@ -118,6 +122,9 @@ export default function WritePage() {
     }
 
     await syncBlogCoauthors(blogId, coAuthorIds, user.id);
+    if (isPublished) {
+      await revalidateFeed();
+    }
     return true;
   };
 

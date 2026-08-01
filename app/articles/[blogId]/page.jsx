@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Navbar from "@/app/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import ArticleCardAuthorInfo from "@/components/ArticleCardAuthorInfo/ArticleCardAuthorInfo";
-import { getArticleWithAuthor } from "@/app/lib/supabase/queries";
+import { getArticle } from "@/app/lib/data/article";
 import { parseLikeCount } from "@/app/lib/supabase/likes";
 import { parseViewCount } from "@/app/lib/supabase/views";
 import RelatedArticlesSection from "./RelatedArticlesSection";
@@ -18,7 +18,7 @@ export const revalidate = 60;
 
 export default async function ArticlePage({ params }) {
   const { blogId } = await params;
-  const data = await getArticleWithAuthor(blogId);
+  const data = await getArticle(blogId);
 
   if (!data?.blog) {
     notFound();

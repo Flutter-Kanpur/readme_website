@@ -1,8 +1,10 @@
 import HomeLayout from "./pages/home/HomeLayout";
-import { getLatestArticle } from "./lib/supabase/queries";
+import { getFeed } from "./lib/data/feed";
+
+export const revalidate = 30;
 
 export default async function HomePage() {
-  const initialBlogs = await getLatestArticle("for_you");
+  const initialBlogs = await getFeed("for_you");
 
   return <HomeLayout initialBlogs={initialBlogs ?? []} />;
 }

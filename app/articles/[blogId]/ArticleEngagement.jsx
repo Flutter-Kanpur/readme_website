@@ -3,6 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import useBlogSupport from '@/app/hooks/useBlogSupport';
 import { recordView } from '@/app/lib/supabase/views';
+import { getCachedLike } from '@/app/lib/supabase/likeCache';
+import {
+  getEngagementCounts,
+  setEngagementCounts,
+} from '@/app/lib/engagementStore';
 
 function formatCount(count) {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
@@ -60,19 +65,34 @@ function EyeIcon({ className }) {
 }
 
 /**
- * Article detail engagement row: Support (like) + view count.
- * Records a view once per device per blog per 24h via increment_blog_view.
+ * Article detail engagement: denormalized like_count + view increment.
+ * No mount-time fetchLikeCount — list/detail share the same counters.
  */
 export default function ArticleEngagement({
   blogId,
   initialLikeCount = 0,
   initialViewCount = 0,
 }) {
+  const stored = blogId ? getEngagementCounts(blogId) : null;
   const { likeCount, isLiked, isLoading, actionLoading, toggleSupport } =
-    useBlogSupport(blogId, { initialLikeCount });
-  const [viewCount, setViewCount] = useState(initialViewCount);
+    useBlogSupport(blogId, {
+      initialLikeCount: stored?.likeCount ?? initialLikeCount,
+      initialIsLiked: blogId ? getCachedLike(blogId) : null,
+      compact: false,
+    });
+  const [viewCount, setViewCount] = useState(
+    stored?.viewCount ?? initialViewCount,
+  );
   const recordedRef = useRef(false);
   const [bounce, setBounce] = useState(false);
+
+  useEffect(() => {
+    if (!blogId) return;
+    setEngagementCounts(blogId, {
+      likeCount: stored?.likeCount ?? initialLikeCount,
+      viewCount: stored?.viewCount ?? initialViewCount,
+    });
+  }, [blogId, initialLikeCount, initialViewCount, stored?.likeCount, stored?.viewCount]);
 
   useEffect(() => {
     if (!blogId || recordedRef.current) return;
@@ -81,16 +101,15 @@ export default function ArticleEngagement({
     let cancelled = false;
     (async () => {
       const latest = await recordView(blogId);
-      if (!cancelled && latest != null && latest !== viewCount) {
+      if (!cancelled && latest != null) {
         setViewCount(latest);
+        setEngagementCounts(blogId, { viewCount: latest });
       }
     })();
 
     return () => {
       cancelled = true;
     };
-    // Intentionally once per blogId mount — matches Flutter BlogDetailLoader.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blogId]);
 
   const handleSupport = () => {

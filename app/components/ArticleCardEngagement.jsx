@@ -5,6 +5,11 @@ import useBlogSupport from '@/app/hooks/useBlogSupport';
 import { getCachedLike, setCachedLike } from '@/app/lib/supabase/likeCache';
 import { parseLikeCount } from '@/app/lib/supabase/likes';
 import { parseViewCount } from '@/app/lib/supabase/views';
+import {
+  getEngagementCounts,
+  seedEngagementFromBlog,
+  subscribeEngagement,
+} from '@/app/lib/engagementStore';
 import './ArticleCardEngagement.css';
 
 function formatCount(count) {
@@ -57,28 +62,48 @@ function EyeIcon() {
 
 /**
  * Compact Support + view count for list cards.
- * Uses embedded list counts only — no per-card Supabase fetches (egress).
+ * Uses denormalized counters + engagement store — no per-card Supabase fetches.
  */
 export default function ArticleCardEngagement({ article, blog }) {
   const row = article ?? blog;
   const blogId = row?.blog_id ?? null;
   const initialLikeCount = parseLikeCount(row);
-  const viewCount = parseViewCount(row);
+  const initialViewCount = parseViewCount(row);
   const cached = blogId ? getCachedLike(blogId) : null;
   const [bounce, setBounce] = useState(false);
+  const [viewCount, setViewCount] = useState(() => {
+    if (!blogId) return initialViewCount;
+    seedEngagementFromBlog(row);
+    return getEngagementCounts(blogId)?.viewCount ?? initialViewCount;
+  });
 
   const { likeCount, isLiked, isLoading, actionLoading, toggleSupport } =
     useBlogSupport(blogId, {
-      initialLikeCount,
+      initialLikeCount:
+        getEngagementCounts(blogId)?.likeCount ?? initialLikeCount,
       initialIsLiked: cached,
       compact: true,
-      refreshCount: false,
     });
 
   useEffect(() => {
     if (!blogId) return;
+    seedEngagementFromBlog({
+      blog_id: blogId,
+      like_count: initialLikeCount,
+      view_count: initialViewCount,
+    });
     setCachedLike(blogId, isLiked);
-  }, [blogId, isLiked]);
+  }, [blogId, isLiked, initialLikeCount, initialViewCount]);
+
+  useEffect(() => {
+    if (!blogId) return undefined;
+    return subscribeEngagement((id, counts) => {
+      if (id !== blogId) return;
+      if (typeof counts.viewCount === 'number') {
+        setViewCount(counts.viewCount);
+      }
+    });
+  }, [blogId]);
 
   if (!blogId) return null;
 

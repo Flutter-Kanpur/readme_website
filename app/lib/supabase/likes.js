@@ -65,10 +65,10 @@ export async function fetchLikeCount(blogId) {
   return count ?? 0;
 }
 
-export async function isLikedByUser(blogId) {
+export async function isLikedByUser(blogId, { user: providedUser } = {}) {
   if (!blogId) return false;
 
-  const user = await getSafeUser();
+  const user = providedUser ?? (await getSafeUser());
   if (!user) return false;
 
   const { data, error } = await supabase
@@ -85,10 +85,10 @@ export async function isLikedByUser(blogId) {
   return Boolean(data);
 }
 
-export async function fetchLikedBlogIds(blogIds) {
+export async function fetchLikedBlogIds(blogIds, { user: providedUser } = {}) {
   if (!blogIds?.length) return new Set();
 
-  const user = await getSafeUser();
+  const user = providedUser ?? (await getSafeUser());
   if (!user) return new Set();
 
   const { data, error } = await supabase

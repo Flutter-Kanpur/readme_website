@@ -17,6 +17,7 @@ import {
 } from "@/app/lib/supabase/communities";
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
 import { normalizeTags } from "@/app/lib/normalizeTags";
+import { revalidateFeed } from "@/app/lib/revalidateFeed";
 import '@/app/write/write.css';
 import { useRouter } from 'next/navigation';
 
@@ -155,6 +156,9 @@ export default function EditPage({ params }) {
           cover_image,
           is_published: isPublished,
           community_id: communityId || null,
+          ...(isPublished
+            ? { published_at: new Date().toISOString() }
+            : {}),
         })
         .eq('blog_id', blogId)
         .eq('author_id', user.id);
@@ -163,7 +167,10 @@ export default function EditPage({ params }) {
 
       await syncBlogCoauthors(blogId, coAuthorIds, user.id);
 
-      if (isPublished) setPublished(true);
+      if (isPublished) {
+        setPublished(true);
+        await revalidateFeed();
+      }
       setMessage(isPublished ? 'Updated & Published successfully!' : 'Draft updated successfully!');
       setTimeout(() => setMessage(''), 3000);
       if (isPublished) {

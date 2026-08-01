@@ -315,11 +315,12 @@ export async function getCommunityPublishedBlogs(communityId, { limit = 30 } = {
     title,
     excerpt,
     created_at,
+    published_at,
     cover_image,
     category,
     author_id,
     view_count,
-    blog_likes (count),
+    like_count,
     profiles ( name, avatar_url ),
     blog_coauthors (
       user_id,
@@ -347,14 +348,20 @@ export async function getCommunityPublishedBlogs(communityId, { limit = 30 } = {
       .select(listSelect)
       .eq('community_id', communityId)
       .eq('is_published', true)
-      .order('created_at', { ascending: false })
+      .order('published_at', { ascending: false, nullsFirst: false })
       .limit(limit);
 
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []).map((blog) => ({
+      ...blog,
+      like_count: blog.like_count ?? 0,
+      view_count: blog.view_count ?? 0,
+    }));
   } catch (error) {
     const msg = error?.message?.toLowerCase() ?? '';
     if (
+      msg.includes('like_count') ||
+      msg.includes('published_at') ||
       msg.includes('blog_likes') ||
       msg.includes('view_count') ||
       msg.includes('relationship') ||

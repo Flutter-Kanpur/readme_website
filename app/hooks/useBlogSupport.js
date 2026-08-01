@@ -1,23 +1,36 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSafeUser } from '@/app/lib/supabase/auth';
 import {
-  fetchLikeCount,
   isLikedByUser,
   likeBlog,
   unlikeBlog,
   formatLikeError,
   isLikesUnavailable,
 } from '@/app/lib/supabase/likes';
+import { getCachedLike, setCachedLike } from '@/app/lib/supabase/likeCache';
+import {
+  getEngagementCounts,
+  getEngagementVersion,
+  setEngagementCounts,
+  subscribeEngagement,
+} from '@/app/lib/engagementStore';
+
+function subscribeStore(onStoreChange) {
+  return subscribeEngagement(() => onStoreChange());
+}
+
+function getStoreSnapshot() {
+  return getEngagementVersion();
+}
 
 /**
  * Support (like) state for a blog — mirrors Flutter BlogSupportButton.
  *
- * List cards (compact): trust embedded like counts + likeCache to avoid
- * per-card Supabase round-trips (egress).
- * Detail (expanded): refresh count + liked state once.
+ * List + detail both trust denormalized like_count (no mount-time recount).
+ * Liked boolean: likeCache / optional one isLikedByUser when unknown.
  */
 export default function useBlogSupport(
   blogId,
@@ -25,68 +38,65 @@ export default function useBlogSupport(
     initialLikeCount = 0,
     initialIsLiked = null,
     compact = false,
-    refreshCount = !compact,
   } = {},
 ) {
   const router = useRouter();
-  const [likeCount, setLikeCount] = useState(initialLikeCount);
-  const [isLiked, setIsLiked] = useState(Boolean(initialIsLiked));
-  const [isLoading, setIsLoading] = useState(
-    !(compact && (initialIsLiked != null || !refreshCount)),
-  );
+  // Re-render when any engagement store update fires (list/detail parity).
+  useSyncExternalStore(subscribeStore, getStoreSnapshot, getStoreSnapshot);
+
+  const stored = blogId ? getEngagementCounts(blogId) : null;
+  const resolvedInitialCount = stored?.likeCount ?? initialLikeCount;
+  const resolvedInitialLiked =
+    initialIsLiked != null
+      ? Boolean(initialIsLiked)
+      : blogId
+        ? getCachedLike(blogId)
+        : null;
+
+  const [likeCount, setLikeCount] = useState(resolvedInitialCount);
+  const [isLiked, setIsLiked] = useState(Boolean(resolvedInitialLiked));
+  const [likedLoaded, setLikedLoaded] = useState(resolvedInitialLiked != null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    setLikeCount(initialLikeCount);
-  }, [initialLikeCount]);
+  const displayCount = stored?.likeCount ?? likeCount;
 
   useEffect(() => {
-    if (!blogId) {
-      setIsLoading(false);
-      return;
+    if (!blogId) return;
+    if (getEngagementCounts(blogId)?.likeCount == null) {
+      setEngagementCounts(blogId, { likeCount: initialLikeCount });
     }
+  }, [blogId, initialLikeCount]);
 
-    // Compact list cards: use SSR/list embeds + cache only (no N+1 egress).
-    if (compact && !refreshCount) {
-      setIsLiked(Boolean(initialIsLiked));
-      setLikeCount(initialLikeCount);
-      setIsLoading(false);
-      return;
+  useEffect(() => {
+    if (!blogId || resolvedInitialLiked != null) {
+      return undefined;
     }
 
     let cancelled = false;
-
-    async function load() {
-      setIsLoading(true);
+    (async () => {
       try {
-        const countPromise = refreshCount
-          ? fetchLikeCount(blogId)
-          : Promise.resolve(initialLikeCount);
-
         let user = null;
         try {
           user = await getSafeUser();
         } catch {
           user = null;
         }
-
         if (cancelled) return;
-
-        if (initialIsLiked != null) {
-          setIsLiked(Boolean(initialIsLiked));
-        } else if (!user) {
+        if (!user) {
           setIsLiked(false);
-        } else {
-          const liked = await isLikedByUser(blogId);
-          if (!cancelled) setIsLiked(liked);
+          setLikedLoaded(true);
+          return;
         }
-
-        const count = await countPromise;
-        if (!cancelled) setLikeCount(count);
+        const liked = await isLikedByUser(blogId, { user });
+        if (!cancelled) {
+          setIsLiked(liked);
+          setCachedLike(blogId, liked);
+          setLikedLoaded(true);
+        }
       } catch (error) {
         if (isLikesUnavailable(error)) {
           console.warn(
-            '[likes] Table not found. Run supabase/migrations/011_blog_likes.sql in Supabase.',
+            '[likes] Table not found. Run supabase migrations for blog_likes.',
           );
         } else {
           const msg = formatLikeError(error).toLowerCase();
@@ -98,19 +108,16 @@ export default function useBlogSupport(
           }
         }
         if (!cancelled) {
-          setIsLiked(Boolean(initialIsLiked));
-          setLikeCount(initialLikeCount);
+          setIsLiked(false);
+          setLikedLoaded(true);
         }
-      } finally {
-        if (!cancelled) setIsLoading(false);
       }
-    }
+    })();
 
-    load();
     return () => {
       cancelled = true;
     };
-  }, [blogId, compact, initialIsLiked, initialLikeCount, refreshCount]);
+  }, [blogId, resolvedInitialLiked]);
 
   const toggleSupport = useCallback(async () => {
     if (!blogId || actionLoading) return;
@@ -128,10 +135,15 @@ export default function useBlogSupport(
     }
 
     const wasLiked = isLiked;
-    const previousCount = likeCount;
+    const previousCount = displayCount;
+    const nextCount = wasLiked
+      ? Math.max(0, displayCount - 1)
+      : displayCount + 1;
 
     setIsLiked(!wasLiked);
-    setLikeCount(wasLiked ? Math.max(0, likeCount - 1) : likeCount + 1);
+    setLikeCount(nextCount);
+    setCachedLike(blogId, !wasLiked);
+    setEngagementCounts(blogId, { likeCount: nextCount });
     setActionLoading(true);
 
     try {
@@ -144,18 +156,20 @@ export default function useBlogSupport(
       console.error('toggleSupport error:', formatLikeError(error));
       setIsLiked(wasLiked);
       setLikeCount(previousCount);
+      setCachedLike(blogId, wasLiked);
+      setEngagementCounts(blogId, { likeCount: previousCount });
       if (error?.message?.includes('not set up yet')) {
         alert(error.message);
       }
     } finally {
       setActionLoading(false);
     }
-  }, [actionLoading, blogId, isLiked, likeCount, router]);
+  }, [actionLoading, blogId, displayCount, isLiked, router]);
 
   return {
-    likeCount,
+    likeCount: displayCount,
     isLiked,
-    isLoading,
+    isLoading: !compact && !likedLoaded,
     actionLoading,
     toggleSupport,
   };

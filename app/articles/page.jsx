@@ -1,10 +1,12 @@
 import Navbar from "../components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import ArticlesSection from "../components/HomepageComponents/ArticleSection";
-import { getLatestArticle } from "../lib/supabase/queries";
+import { getFeed } from "../lib/data/feed";
+
+export const revalidate = 30;
 
 export default async function ArticlesPage() {
-  const initialBlogs = await getLatestArticle("for_you");
+  const initialBlogs = await getFeed("for_you");
 
   return (
     <main className="grid-background min-h-screen">

@@ -16,8 +16,9 @@ const SEARCH_SELECT = `
   category,
   cover_image,
   created_at,
+  published_at,
   view_count,
-  blog_likes (count),
+  like_count,
   profiles (
     name,
     avatar_url
@@ -41,6 +42,8 @@ function mapSearchRows(rows) {
     ...article,
     cover_image: sanitizeCoverImage(article.cover_image),
     excerpt: article.excerpt || "",
+    like_count: article.like_count ?? 0,
+    view_count: article.view_count ?? 0,
   }));
 }
 
@@ -65,12 +68,14 @@ function SearchPageContent() {
         .or(
           `title.ilike.%${query}%,content.ilike.%${query}%,category.ilike.%${query}%`,
         )
-        .order("created_at", { ascending: false })
+        .order("published_at", { ascending: false, nullsFirst: false })
         .limit(SEARCH_LIMIT);
 
       if (error) {
         const msg = (error.message || "").toLowerCase();
         if (
+          msg.includes("like_count") ||
+          msg.includes("published_at") ||
           msg.includes("blog_likes") ||
           msg.includes("view_count") ||
           msg.includes("relationship") ||
