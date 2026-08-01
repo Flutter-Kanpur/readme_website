@@ -30,11 +30,140 @@ export default function Editor({ onDataChange, initialData }) {
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [savedSelection, setSavedSelection] = useState(null);
+  const selectedImageRef = useRef(null);
   const [formatStates, setFormatStates] = useState({
     bold: false,
     italic: false,
-    underline: false
+    underline: false,
+    bulletList: false,
+    orderedList: false,
+    quote: false,
+    link: false,
+    image: false,
   });
+
+  const getAncestor = useCallback((node, predicate) => {
+    const editor = editorRef.current;
+    if (!editor || !node) return null;
+    let el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    while (el && el !== editor) {
+      if (predicate(el)) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }, []);
+
+  const getBlockquoteAncestor = useCallback(
+    (node) => getAncestor(node, (el) => el.nodeName === 'BLOCKQUOTE'),
+    [getAncestor]
+  );
+
+  const getLinkAncestor = useCallback(
+    (node) => getAncestor(node, (el) => el.nodeName === 'A' && !!el.href),
+    [getAncestor]
+  );
+
+  const getListAncestor = useCallback(
+    (node, type) => getAncestor(node, (el) => el.nodeName === type),
+    [getAncestor]
+  );
+
+  const getImageWrapperAncestor = useCallback(
+    (node) => getAncestor(node, (el) => el.classList?.contains('editor-image-wrapper')),
+    [getAncestor]
+  );
+
+  const applyBlockquoteStyles = useCallback((el) => {
+    if (!el || el.hasAttribute('data-styled')) return;
+    el.style.borderLeft = '4px solid #ccc';
+    el.style.paddingLeft = '16px';
+    el.style.marginLeft = '0';
+    el.style.marginTop = '8px';
+    el.style.marginBottom = '8px';
+    el.style.color = '#666';
+    el.style.fontStyle = 'italic';
+    el.setAttribute('data-styled', 'true');
+  }, []);
+
+  const unwrapBlockquote = useCallback((blockquote) => {
+    const parent = blockquote.parentNode;
+    if (!parent) return;
+
+    const selection = window.getSelection();
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    const marker = document.createTextNode('\u200B');
+
+    if (range && blockquote.contains(range.startContainer)) {
+      blockquote.insertBefore(marker, blockquote.firstChild);
+    }
+
+    while (blockquote.firstChild) {
+      parent.insertBefore(blockquote.firstChild, blockquote);
+    }
+    parent.removeChild(blockquote);
+
+    if (marker.parentNode && selection) {
+      const restore = document.createRange();
+      restore.setStartAfter(marker);
+      restore.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(restore);
+      marker.parentNode.removeChild(marker);
+    }
+  }, []);
+
+  const updateFormatStates = useCallback(() => {
+    const editor = editorRef.current;
+    const empty = {
+      bold: false,
+      italic: false,
+      underline: false,
+      bulletList: false,
+      orderedList: false,
+      quote: false,
+      link: false,
+      image: false,
+    };
+
+    if (!editor) {
+      setFormatStates((prev) => {
+        const same = Object.keys(empty).every((key) => prev[key] === empty[key]);
+        return same ? prev : empty;
+      });
+      return;
+    }
+
+    const selection = window.getSelection();
+    const anchor = selection?.anchorNode;
+    const inEditor = !!(selection && selection.rangeCount > 0 && anchor && editor.contains(anchor));
+
+    let next = { ...empty };
+
+    if (inEditor) {
+      try {
+        next.bold = document.queryCommandState('bold');
+        next.italic = document.queryCommandState('italic');
+        next.underline = document.queryCommandState('underline');
+        next.bulletList = document.queryCommandState('insertUnorderedList');
+        next.orderedList = document.queryCommandState('insertOrderedList');
+      } catch {
+        // queryCommandState can throw in some browsers
+      }
+
+      next.quote = !!getBlockquoteAncestor(anchor);
+      next.link = !!getLinkAncestor(anchor);
+      next.bulletList = next.bulletList || !!getListAncestor(anchor, 'UL');
+      next.orderedList = next.orderedList || !!getListAncestor(anchor, 'OL');
+    }
+
+    const selectedImage = selectedImageRef.current;
+    next.image = !!(selectedImage && editor.contains(selectedImage));
+
+    setFormatStates((prev) => {
+      const same = Object.keys(next).every((key) => prev[key] === next[key]);
+      return same ? prev : next;
+    });
+  }, [getBlockquoteAncestor, getLinkAncestor, getListAncestor]);
 
   // Undo/Redo state management
   const [undoStack, setUndoStack] = useState([]);
@@ -216,36 +345,14 @@ export default function Editor({ onDataChange, initialData }) {
     if (!editor) return;
 
     editor.focus();
-
-    // Toggle the format state manually - this stays active until clicked again
-    const newState = !formatStates[command];
-    setFormatStates(prev => ({
-      ...prev,
-      [command]: newState
-    }));
-
-    // Save state before making changes
     saveState();
 
     try {
-      let execCommand;
-      switch (command) {
-        case 'bold':
-          execCommand = 'bold';
-          break;
-        case 'italic':
-          execCommand = 'italic';
-          break;
-        case 'underline':
-          execCommand = 'underline';
-          break;
-        default:
-          return;
-      }
-      
-      // Apply formatting using execCommand
+      const commands = { bold: 'bold', italic: 'italic', underline: 'underline' };
+      const execCommand = commands[command];
+      if (!execCommand) return;
       document.execCommand(execCommand, false, null);
-      
+      updateFormatStates();
     } catch (error) {
       console.error('Format command failed:', error);
     }
@@ -254,163 +361,184 @@ export default function Editor({ onDataChange, initialData }) {
   const handleOrderedList = () => {
     const editor = editorRef.current;
     if (!editor) return;
-    
-    // Save state before making changes
+
     saveState();
-    
     editor.focus();
-    // Use execCommand for better undo/redo integration
     document.execCommand('insertOrderedList', false, null);
+    updateFormatStates();
   };
 
   const handleUnorderedList = () => {
     const editor = editorRef.current;
     if (!editor) return;
-    
-    // Save state before making changes
+
     saveState();
-    
     editor.focus();
-    // Use execCommand for better undo/redo integration
     document.execCommand('insertUnorderedList', false, null);
+    updateFormatStates();
   };
 
   const handleQuote = () => {
     const editor = editorRef.current;
     if (!editor) return;
-    
+
+    editor.focus();
+
     const selection = window.getSelection();
-    if (selection.rangeCount > 0 && selection.toString().trim()) {
-      // Save state before making changes
-      saveState();
-      
-      editor.focus();
-      
-      // Try to use formatBlock for better undo integration
-      try {
-        document.execCommand('formatBlock', false, 'blockquote');
-        
-        // Apply custom styling to the blockquote
-        setTimeout(() => {
-          const blockquotes = editor.querySelectorAll('blockquote');
-          const lastBlockquote = blockquotes[blockquotes.length - 1];
-          if (lastBlockquote && !lastBlockquote.hasAttribute('data-styled')) {
-            lastBlockquote.style.borderLeft = '4px solid #ccc';
-            lastBlockquote.style.paddingLeft = '16px';
-            lastBlockquote.style.marginLeft = '0';
-            lastBlockquote.style.marginTop = '8px';
-            lastBlockquote.style.marginBottom = '8px';
-            lastBlockquote.style.color = '#666';
-            lastBlockquote.style.fontStyle = 'italic';
-            lastBlockquote.setAttribute('data-styled', 'true');
-          }
-          checkFormatStates();
-        }, 0);
-        
-      } catch (error) {
-        // Fallback to manual method if formatBlock fails
-        console.warn('formatBlock failed, using manual method:', error);
-        const range = selection.getRangeAt(0);
-        const selectedContent = range.extractContents();
-        
-        const blockquote = document.createElement('blockquote');
-        blockquote.style.borderLeft = '4px solid #ccc';
-        blockquote.style.paddingLeft = '16px';
-        blockquote.style.marginLeft = '0';
-        blockquote.style.marginTop = '8px';
-        blockquote.style.marginBottom = '8px';
-        blockquote.style.color = '#666';
-        blockquote.style.fontStyle = 'italic';
-        blockquote.appendChild(selectedContent);
-        
-        range.insertNode(blockquote);
-        range.setStartAfter(blockquote);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-      
-    } else {
-      alert('Please select some text to quote');
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    if (!editor.contains(range.commonAncestorContainer)) return;
+
+    const existingQuote =
+      getBlockquoteAncestor(range.commonAncestorContainer) ||
+      getBlockquoteAncestor(selection.anchorNode);
+
+    saveState();
+
+    if (existingQuote) {
+      unwrapBlockquote(existingQuote);
+      const title = titleRef.current?.value || '';
+      onDataChange?.({ title, content: editor.innerHTML });
+      updateFormatStates();
+      return;
+    }
+
+    try {
+      document.execCommand('formatBlock', false, 'blockquote');
+      setTimeout(() => {
+        const quoted =
+          getBlockquoteAncestor(window.getSelection()?.anchorNode) ||
+          editor.querySelector('blockquote:not([data-styled])');
+        if (quoted) applyBlockquoteStyles(quoted);
+        const title = titleRef.current?.value || '';
+        onDataChange?.({ title, content: editor.innerHTML });
+        updateFormatStates();
+      }, 0);
+    } catch (error) {
+      console.warn('formatBlock failed, using manual method:', error);
+      const selectedContent = range.extractContents();
+      const blockquote = document.createElement('blockquote');
+      applyBlockquoteStyles(blockquote);
+      blockquote.appendChild(selectedContent);
+      range.insertNode(blockquote);
+      range.selectNodeContents(blockquote);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      const title = titleRef.current?.value || '';
+      onDataChange?.({ title, content: editor.innerHTML });
+      updateFormatStates();
     }
   };
 
   const handleLink = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.focus();
     const selection = window.getSelection();
-    const selectedText = selection.toString();
-    
-    if (!selectedText) {
-      alert('Please select text first to create a link');
+    if (!selection || selection.rangeCount === 0) return;
+
+    const existingLink = getLinkAncestor(selection.anchorNode);
+    if (existingLink) {
+      saveState();
+      const range = document.createRange();
+      range.selectNodeContents(existingLink);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.execCommand('unlink', false, null);
+      const title = titleRef.current?.value || '';
+      onDataChange?.({ title, content: editor.innerHTML });
+      updateFormatStates();
       return;
     }
-    
-    if (selection.rangeCount > 0) {
-      setSavedSelection(selection.getRangeAt(0));
+
+    let range = selection.getRangeAt(0);
+    if (range.collapsed) {
+      const node = selection.anchorNode;
+      if (node && node.nodeType === Node.TEXT_NODE && node.textContent) {
+        const text = node.textContent;
+        let start = selection.anchorOffset;
+        let end = selection.anchorOffset;
+        while (start > 0 && /\S/.test(text[start - 1])) start -= 1;
+        while (end < text.length && /\S/.test(text[end])) end += 1;
+        if (start !== end) {
+          range = document.createRange();
+          range.setStart(node, start);
+          range.setEnd(node, end);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      }
     }
-    
+
+    setSavedSelection(range.cloneRange());
     setLinkUrl('');
     setShowLinkDialog(true);
   };
 
-  const insertLink = () => {
-    if (!linkUrl.trim()) {
-      return;
-    }
+  const styleLink = (anchor) => {
+    if (!anchor || anchor.hasAttribute('data-styled')) return;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.style.color = '#3b82f6';
+    anchor.style.textDecoration = 'underline';
+    anchor.setAttribute('data-styled', 'true');
+  };
 
-    // Save state before making changes
+  const insertLink = () => {
+    if (!linkUrl.trim()) return;
+
     saveState();
 
-    if (savedSelection) {
+    const editor = editorRef.current;
+    if (savedSelection && editor) {
       const selection = window.getSelection();
       selection.removeAllRanges();
       selection.addRange(savedSelection.cloneRange());
-      
-      // Focus the editor to ensure the command works properly
-      editorRef.current?.focus();
-      
-      try {
-        // Try to use createLink command for better undo integration
-        document.execCommand('createLink', false, linkUrl);
-        
-        // Apply custom styling to the link
-        setTimeout(() => {
-          const links = editorRef.current?.querySelectorAll('a[href]');
-          if (links && links.length > 0) {
-            const lastLink = links[links.length - 1];
-            if (lastLink && !lastLink.hasAttribute('data-styled')) {
-              lastLink.target = '_blank';
-              lastLink.rel = 'noopener noreferrer';
-              lastLink.style.color = '#3b82f6';
-              lastLink.style.textDecoration = 'underline';
-              lastLink.setAttribute('data-styled', 'true');
-            }
-          }
-        }, 0);
-        
-      } catch (error) {
-        // Fallback to manual method if createLink fails
-        console.warn('createLink failed, using manual method:', error);
+      editor.focus();
+
+      const selectedText = savedSelection.toString().trim();
+
+      if (!selectedText) {
         const anchor = document.createElement('a');
         anchor.href = linkUrl;
-        anchor.target = '_blank';
-        anchor.rel = 'noopener noreferrer';
-        anchor.style.color = '#3b82f6';
-        anchor.style.textDecoration = 'underline';
-        anchor.textContent = savedSelection.toString();
-        
-        savedSelection.deleteContents();
+        anchor.textContent = linkUrl;
+        styleLink(anchor);
         savedSelection.insertNode(anchor);
-        
         const newRange = document.createRange();
         newRange.setStartAfter(anchor);
         newRange.collapse(true);
         selection.removeAllRanges();
         selection.addRange(newRange);
+      } else {
+        try {
+          document.execCommand('createLink', false, linkUrl);
+          setTimeout(() => {
+            editor.querySelectorAll('a[href]').forEach(styleLink);
+            updateFormatStates();
+          }, 0);
+        } catch (error) {
+          console.warn('createLink failed, using manual method:', error);
+          const anchor = document.createElement('a');
+          anchor.href = linkUrl;
+          anchor.textContent = selectedText;
+          styleLink(anchor);
+          savedSelection.deleteContents();
+          savedSelection.insertNode(anchor);
+          const newRange = document.createRange();
+          newRange.setStartAfter(anchor);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
       }
-      
-      editorRef.current?.focus();
+
+      editor.focus();
+      updateFormatStates();
     }
-    
+
     setShowLinkDialog(false);
     setLinkUrl('');
     setSavedSelection(null);
@@ -424,6 +552,20 @@ export default function Editor({ onDataChange, initialData }) {
   };
 
   const handleImage = () => {
+    const editor = editorRef.current;
+    const selectedImage = selectedImageRef.current;
+
+    if (selectedImage && editor?.contains(selectedImage)) {
+      saveState();
+      selectedImage.remove();
+      selectedImageRef.current = null;
+      const title = titleRef.current?.value || '';
+      onDataChange?.({ title, content: editor.innerHTML });
+      editor.focus();
+      updateFormatStates();
+      return;
+    }
+
     fileInputRef.current?.click();
   };
 
@@ -536,7 +678,9 @@ export default function Editor({ onDataChange, initialData }) {
           selection.addRange(newRange);
         }
         
+        selectedImageRef.current = wrapper;
         editorRef.current?.focus();
+        updateFormatStates();
       };
       reader.readAsDataURL(file);
     }
@@ -557,21 +701,38 @@ export default function Editor({ onDataChange, initialData }) {
         const wrapper = deleteBtn.closest('.editor-image-wrapper');
         if (wrapper) {
           saveState();
+          if (selectedImageRef.current === wrapper) selectedImageRef.current = null;
           wrapper.remove();
           const title = titleRef.current?.value || '';
           const content = editorRef.current?.innerHTML || '';
           onDataChange?.({ title, content });
           editorRef.current?.focus();
+          updateFormatStates();
         }
       }
       return;
     }
 
+    const imageWrapper = getImageWrapperAncestor(e.target);
+    selectedImageRef.current =
+      imageWrapper && editorRef.current?.contains(imageWrapper) ? imageWrapper : null;
+
     const target = e.target.closest('a');
-    if (target && target.href) {
+    if (target && target.href && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       window.open(target.href, '_blank', 'noopener,noreferrer');
     }
+
+    updateFormatStates();
+  };
+
+  const handleEditorMouseUp = () => {
+    updateFormatStates();
+  };
+
+  const handleEditorKeyUp = () => {
+    selectedImageRef.current = null;
+    updateFormatStates();
   };
 
   const handleKeyDown = (e) => {
@@ -706,14 +867,92 @@ export default function Editor({ onDataChange, initialData }) {
         <Toolbar
           buttons={[
             [
-              { label: 'B', onClick: () => handleFormat('bold'), className: `toolbar-btn toolbar-btn-bold ${formatStates.bold ? 'toolbar-btn-active' : ''}`, title: 'Bold (Ctrl+B)' },
-              { label: 'I', onClick: () => handleFormat('italic'), className: `toolbar-btn toolbar-btn-italic ${formatStates.italic ? 'toolbar-btn-active' : ''}`, title: 'Italic (Ctrl+I)' },
-              { label: 'U', onClick: () => handleFormat('underline'), className: `toolbar-btn toolbar-btn-underline ${formatStates.underline ? 'toolbar-btn-active' : ''}`, title: 'Underline (Ctrl+U)' },
-              { icon: <List className="toolbar-icon" aria-hidden="true" />, onClick: handleUnorderedList, className: 'toolbar-btn toolbar-btn-icon toolbar-btn-bullet-list', title: 'Bullet List' },
-              { icon: <ListOrdered className="toolbar-icon" aria-hidden="true" />, onClick: handleOrderedList, className: 'toolbar-btn toolbar-btn-icon toolbar-btn-numbered-list', title: 'Numbered List' },
-              { icon: <Quote className="toolbar-icon" aria-hidden="true" />, onClick: handleQuote, className: 'toolbar-btn toolbar-btn-icon', title: 'Quote' },
-              { icon: <Link2 className="toolbar-icon" aria-hidden="true" />, onClick: handleLink, className: 'toolbar-btn toolbar-btn-icon', title: 'Link' },
-              { icon: <ImageIcon className="toolbar-icon" aria-hidden="true" />, onClick: handleImage, className: 'toolbar-btn toolbar-btn-icon', title: 'Image' },
+              {
+                label: 'B',
+                onClick: () => handleFormat('bold'),
+                className: `toolbar-btn toolbar-btn-bold ${formatStates.bold ? 'toolbar-btn-active' : ''}`,
+                title: formatStates.bold ? 'Remove bold (Ctrl+B)' : 'Bold (Ctrl+B)',
+                pressed: formatStates.bold,
+              },
+              {
+                label: 'I',
+                onClick: () => handleFormat('italic'),
+                className: `toolbar-btn toolbar-btn-italic ${formatStates.italic ? 'toolbar-btn-active' : ''}`,
+                title: formatStates.italic ? 'Remove italic (Ctrl+I)' : 'Italic (Ctrl+I)',
+                pressed: formatStates.italic,
+              },
+              {
+                label: 'U',
+                onClick: () => handleFormat('underline'),
+                className: `toolbar-btn toolbar-btn-underline ${formatStates.underline ? 'toolbar-btn-active' : ''}`,
+                title: formatStates.underline ? 'Remove underline (Ctrl+U)' : 'Underline (Ctrl+U)',
+                pressed: formatStates.underline,
+              },
+              {
+                icon: (
+                  <List
+                    className="toolbar-icon"
+                    aria-hidden="true"
+                    fill={formatStates.bulletList ? 'currentColor' : 'none'}
+                  />
+                ),
+                onClick: handleUnorderedList,
+                className: `toolbar-btn toolbar-btn-icon toolbar-btn-bullet-list ${formatStates.bulletList ? 'toolbar-btn-active' : ''}`,
+                title: formatStates.bulletList ? 'Remove bullet list' : 'Bullet List',
+                pressed: formatStates.bulletList,
+              },
+              {
+                icon: (
+                  <ListOrdered
+                    className="toolbar-icon"
+                    aria-hidden="true"
+                    fill={formatStates.orderedList ? 'currentColor' : 'none'}
+                  />
+                ),
+                onClick: handleOrderedList,
+                className: `toolbar-btn toolbar-btn-icon toolbar-btn-numbered-list ${formatStates.orderedList ? 'toolbar-btn-active' : ''}`,
+                title: formatStates.orderedList ? 'Remove numbered list' : 'Numbered List',
+                pressed: formatStates.orderedList,
+              },
+              {
+                icon: (
+                  <Quote
+                    className="toolbar-icon"
+                    aria-hidden="true"
+                    fill={formatStates.quote ? 'currentColor' : 'none'}
+                  />
+                ),
+                onClick: handleQuote,
+                className: `toolbar-btn toolbar-btn-icon ${formatStates.quote ? 'toolbar-btn-active' : ''}`,
+                title: formatStates.quote ? 'Remove quote' : 'Quote',
+                pressed: formatStates.quote,
+              },
+              {
+                icon: (
+                  <Link2
+                    className="toolbar-icon"
+                    aria-hidden="true"
+                    fill={formatStates.link ? 'currentColor' : 'none'}
+                  />
+                ),
+                onClick: handleLink,
+                className: `toolbar-btn toolbar-btn-icon ${formatStates.link ? 'toolbar-btn-active' : ''}`,
+                title: formatStates.link ? 'Remove link' : 'Link',
+                pressed: formatStates.link,
+              },
+              {
+                icon: (
+                  <ImageIcon
+                    className="toolbar-icon"
+                    aria-hidden="true"
+                    fill={formatStates.image ? 'currentColor' : 'none'}
+                  />
+                ),
+                onClick: handleImage,
+                className: `toolbar-btn toolbar-btn-icon ${formatStates.image ? 'toolbar-btn-active' : ''}`,
+                title: formatStates.image ? 'Remove image' : 'Image',
+                pressed: formatStates.image,
+              },
             ]
           ]}
         />
@@ -734,6 +973,8 @@ export default function Editor({ onDataChange, initialData }) {
         onFocus={handlePlaceholder}
         onBlur={handlePlaceholder}
         onClick={handleEditorClick}
+        onMouseUp={handleEditorMouseUp}
+        onKeyUp={handleEditorKeyUp}
         onKeyDown={handleKeyDown}
         data-empty="true"
         className="editor-content"
