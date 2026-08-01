@@ -1,5 +1,6 @@
 .editor-container {
   position: relative;
+  min-width: 0;
 }
 
 .link-dialog-overlay {
@@ -10,6 +11,7 @@
   align-items: center;
   justify-content: center;
   z-index: 50;
+  padding: 1rem;
 }
 
 .link-dialog {
@@ -17,7 +19,8 @@
   border-radius: 0.5rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   padding: 1.5rem;
-  width: 400px;
+  width: 100%;
+  max-width: 400px;
 }
 
 .link-dialog-header {
@@ -35,6 +38,11 @@
 
 .link-dialog-close {
   color: rgb(156, 163, 175);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: inline-flex;
 }
 
 .link-dialog-close:hover {
@@ -70,6 +78,9 @@
   padding: 0.5rem 1rem;
   color: rgb(75, 85, 99);
   border-radius: 0.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
 }
 
 .link-cancel-btn:hover {
@@ -81,6 +92,8 @@
   background-color: rgb(37, 99, 235);
   color: white;
   border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
 }
 
 .link-insert-btn:hover {
@@ -93,23 +106,29 @@
 }
 
 .editor-toolbar-section {
-  margin-bottom: 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0;
+  background-color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .editor-title {
   width: 100%;
-  /* Scales 28px → 42px between mobile and desktop. */
   font-size: clamp(1.75rem, 6vw, 2.625rem);
   font-family: var(--font-google-sans), "Google Sans", sans-serif;
   font-weight: 600;
   line-height: 1.2;
-  /* Long unbreakable tokens shouldn't push the editor wider than its track. */
   overflow-wrap: anywhere;
   word-wrap: break-word;
   min-width: 0;
   background: transparent;
   border: 0;
   outline: 0;
+  margin-bottom: 0.5rem;
 }
 
 .editor-title::placeholder {
@@ -120,32 +139,44 @@
   outline: none;
 }
 
-.editor-content {
+/* TipTap mounts .editor-content on the ProseMirror root */
+.editor-content,
+.ProseMirror.editor-content {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  margin-top: 1rem;
-  /* Slightly smaller body text on mobile, full size on larger screens. */
-  font-size: clamp(1rem, 2.5vw, 1.125rem);
+  margin-top: 0.75rem;
+  font-size: clamp(1.0625rem, 2.5vw, 1.1875rem);
   color: rgb(55, 65, 81);
-  min-height: 400px;
+  min-height: 420px;
   line-height: 1.85;
   position: relative;
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-wrap: break-word;
-}
-
-.editor-content:focus {
   outline: none;
 }
 
-/* Ensure only selected text gets formatting, not entire lines */
-.editor-content b, .editor-content strong {
-  font-weight: bold;
+.editor-content:focus,
+.ProseMirror.editor-content:focus {
+  outline: none;
 }
 
-.editor-content i, .editor-content em {
+.editor-content p {
+  margin: 0 0 1.1em;
+  padding: 0;
+}
+
+.editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+.editor-content strong,
+.editor-content b {
+  font-weight: 700;
+}
+
+.editor-content em,
+.editor-content i {
   font-style: italic;
 }
 
@@ -153,109 +184,89 @@
   text-decoration: underline;
 }
 
-/* Proper list styling */
 .editor-content ul {
   list-style-type: disc;
-  margin: 1rem 0;
-  padding-left: 2rem;
+  margin: 0 0 1.1em;
+  padding-left: 1.5rem;
 }
 
 .editor-content ol {
   list-style-type: decimal;
-  margin: 1rem 0;
-  padding-left: 2rem;
+  margin: 0 0 1.1em;
+  padding-left: 1.5rem;
 }
 
 .editor-content li {
-  margin: 0.25rem 0;
-  line-height: 1.6;
+  margin: 0.35rem 0;
+  line-height: 1.7;
 }
 
-/* Prevent line-level formatting */
-.editor-content p {
+.editor-content li p {
   margin: 0;
-  padding: 0;
-}
-
-.editor-content div {
-  margin: 0;
-  padding: 0;
-}
-
-.editor-content[data-empty="true"]::before {
-  content: 'Start your story...';
-  color: rgb(156, 163, 175);
-  position: absolute;
-}
-
-.editor-content img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 10px 0;
-}
-
-.editor-image-wrapper {
-  position: relative;
-  display: block;
-  max-width: 100%;
-  margin: 10px 0;
-}
-
-.editor-image-wrapper:hover {
-  border-color: #3b82f6 !important;
-}
-
-/* Ensure proper spacing after images */
-.editor-image-wrapper + div,
-.editor-image-wrapper + br + div {
-  margin-top: 10px;
-}
-
-.editor-image-delete {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: none;
-  background-color: rgba(239, 68, 68, 0.9);
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: all 0.2s ease;
-  z-index: 10;
-  line-height: 1;
-}
-
-.editor-image-delete:hover {
-  background-color: rgba(239, 68, 68, 1);
-  transform: scale(1.1);
-}
-
-.editor-image-wrapper:hover .editor-image-delete {
-  opacity: 1 !important;
 }
 
 .editor-content blockquote {
-  border-left: 4px solid rgb(209, 213, 219);
-  padding-left: 1rem;
+  border-left: 3px solid rgb(209, 213, 219);
+  margin: 0 0 1.25em;
+  padding: 0.15em 0 0.15em 1.1rem;
   font-style: italic;
   color: rgb(75, 85, 99);
+}
+
+.editor-content blockquote p {
+  margin-bottom: 0.5em;
+}
+
+.editor-content blockquote p:last-child {
+  margin-bottom: 0;
 }
 
 .editor-content a {
   color: rgb(37, 99, 235);
   text-decoration: underline;
-  cursor: pointer;
+  cursor: text;
+}
+
+.editor-content img,
+.editor-content .editor-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.25rem 0;
+  border-radius: 0.25rem;
+}
+
+.editor-content img.ProseMirror-selectednode,
+.editor-content .editor-image.ProseMirror-selectednode {
+  outline: 2px solid rgb(59, 130, 246);
+  outline-offset: 2px;
+}
+
+.editor-content p.is-editor-empty:first-child::before,
+.editor-content .is-empty::before {
+  color: rgb(156, 163, 175);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
 }
 
 .hidden {
   display: none;
+}
+
+@media (max-width: 767px) {
+  .editor-toolbar-section {
+    top: 3.25rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    border-bottom: 1px solid rgb(243, 244, 246);
+  }
+
+  .editor-content,
+  .ProseMirror.editor-content {
+    min-height: 320px;
+  }
 }

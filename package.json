@@ -10,6 +10,13 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.93.1",
+    "@tiptap/extension-image": "^3.29.2",
+    "@tiptap/extension-link": "^3.29.2",
+    "@tiptap/extension-placeholder": "^3.29.2",
+    "@tiptap/extension-underline": "^3.29.2",
+    "@tiptap/pm": "^3.29.2",
+    "@tiptap/react": "^3.29.2",
+    "@tiptap/starter-kit": "^3.29.2",
     "lucide-react": "^0.563.0",
     "next": "16.1.4",
     "react": "19.2.3",

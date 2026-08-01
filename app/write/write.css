@@ -134,6 +134,11 @@
   min-width: 0;
 }
 
+/* Sticky formatting bar sits inside the scrolling editor column */
+.write-editor-section .editor-toolbar-section {
+  top: 0;
+}
+
 .write-sidebar {
   width: 320px;
   flex-shrink: 0;

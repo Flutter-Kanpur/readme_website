@@ -1,8 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Served under /blogs on the main Flutter Kanpur site (reverse-proxy).
+  // Served under /blogs for Flutter Kanpur site + mobile app deep links.
+  // Standalone visits to readme.flutterkanpur.in/ also reach the home page
+  // via the root redirect below (basePath: false so it matches outside /blogs).
   basePath: "/blogs",
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/blogs",
+        permanent: false,
+        basePath: false,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

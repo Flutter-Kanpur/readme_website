@@ -1,6 +1,7 @@
 /**
- * App is served under /blogs (standalone Vercel deploy + reverse-proxy from
- * the main Flutter Kanpur site). Keep in sync with next.config.ts `basePath`.
+ * App is served under /blogs (Flutter Kanpur site reverse-proxy + mobile app).
+ * Bare domain readme.flutterkanpur.in/ redirects to /blogs (see next.config.ts).
+ * Keep in sync with next.config.ts `basePath`.
  *
  * next/link and next/navigation router already apply basePath — use this for
  * raw <img>/<a>, window.location, and absolute OAuth callback URLs.
