@@ -16,6 +16,7 @@ import {
 } from "@/app/lib/supabase/communities";
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
 import { revalidateFeed } from "@/app/lib/revalidateFeed";
+import { normalizeTags } from "@/app/lib/normalizeTags";
 import './write.css';
 
 export default function WritePage() {
@@ -92,7 +93,7 @@ export default function WritePage() {
       title: title.trim(),
       content,
       category,
-      tags,
+      tags: normalizeTags(tags),
       cover_image,
       is_published: isPublished,
       community_id: communityId || null,

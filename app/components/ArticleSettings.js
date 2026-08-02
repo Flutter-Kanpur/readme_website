@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Upload } from 'lucide-react';
 import { normalizeTags } from '@/app/lib/normalizeTags';
+import { EDITOR_CATEGORIES } from '@/app/lib/taxonomy';
 import './ArticleSettings.css';
 
 export default function ArticleSettings({ onDataChange, initialData }) {
@@ -16,27 +17,20 @@ export default function ArticleSettings({ onDataChange, initialData }) {
   const [featuredImage, setFeaturedImage] = useState(initialData?.coverImage || null);
   const imageInputRef = useRef(null);
 
-  useEffect(() => {onDataChange?.({   category,   tags,  coverImage: featuredImage 
- });
+  useEffect(() => {
+    onDataChange?.({
+      category,
+      tags: normalizeTags(tags),
+      coverImage: featuredImage,
+    });
   }, [category, tags, featuredImage, onDataChange]);
 
-  const categories = [
-    'Technology',
-    'Design',
-    'Business',
-    'Lifestyle',
-    'Travel',
-    'Food',
-    'Health',
-    'Fashion'
-  ];
+  const categories = EDITOR_CATEGORIES;
 
   const handleAddTag = (e) => {
     if (e.key === 'Enter' && tagInput.trim()) {
       e.preventDefault();
-      if (!tags.includes(tagInput.trim())) {
-        setTags([...tags, tagInput.trim()]);
-      }
+      setTags(normalizeTags([...tags, tagInput.trim()]));
       setTagInput('');
     }
   };

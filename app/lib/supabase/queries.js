@@ -1,4 +1,6 @@
 import { supabase } from './index'
+import { buildTopicOrFilter, getFeedFilter } from '@/app/lib/taxonomy'
+import { normalizeTags } from '@/app/lib/normalizeTags'
 
 /**
  * Cover images saved as base64 data URLs (from the editor upload) can be
@@ -456,13 +458,20 @@ export async function getLatestArticle(category = "for_you") {
         msg.includes("schema cache") ||
         msg.includes("does not exist") ||
         msg.includes("pgrst204"));
+    const missingTags =
+      msg.includes("tags") &&
+      (msg.includes("column") ||
+        msg.includes("schema cache") ||
+        msg.includes("does not exist") ||
+        msg.includes("pgrst204"));
 
-    if (missingCommunity || missingEngagement || missingExcerpt) {
+    if (missingCommunity || missingEngagement || missingExcerpt || missingTags) {
       try {
         return await fetchLatestArticles(category, {
           withCommunity: !missingCommunity,
           withEngagement: !missingEngagement,
           withExcerpt: !missingExcerpt,
+          withTags: !missingTags,
           orderByPublishedAt: !msg.includes("published_at"),
         });
       } catch (fallbackError) {
@@ -474,12 +483,14 @@ export async function getLatestArticle(category = "for_you") {
           fallbackMsg.includes("view_count") ||
           fallbackMsg.includes("communities") ||
           fallbackMsg.includes("blog_coauthors") ||
-          fallbackMsg.includes("excerpt")
+          fallbackMsg.includes("excerpt") ||
+          fallbackMsg.includes("tags")
         ) {
           return fetchLatestArticles(category, {
             withCommunity: false,
             withEngagement: false,
             withExcerpt: false,
+            withTags: false,
             orderByPublishedAt: false,
           });
         }
@@ -500,6 +511,7 @@ async function fetchLatestArticles(
     withCommunity = true,
     withEngagement = true,
     withExcerpt = true,
+    withTags = true,
     orderByPublishedAt = true,
   } = {},
 ) {
@@ -510,6 +522,7 @@ async function fetchLatestArticles(
     : "";
   const excerptField = withExcerpt ? `,\n      excerpt` : "";
   const publishedField = orderByPublishedAt ? `,\n      published_at` : "";
+  const tagsField = withTags ? `,\n      tags` : "";
 
   const selectFields = withCommunity
     ? `
@@ -517,7 +530,7 @@ async function fetchLatestArticles(
       title${excerptField},
       created_at${publishedField},
       cover_image,
-      category,
+      category${tagsField},
       community_id${engagementFields},
       profiles (
         name,
@@ -543,7 +556,7 @@ async function fetchLatestArticles(
       title${excerptField},
       created_at${publishedField},
       cover_image,
-      category${engagementFields},
+      category${tagsField}${engagementFields},
       profiles (
         name,
         avatar_url
@@ -559,10 +572,34 @@ async function fetchLatestArticles(
       nullsFirst: false,
     });
 
-  if (category === "communities") {
+  const feedFilter = getFeedFilter(category);
+  if (category === "communities" || feedFilter?.value === "communities") {
     query = query.not("community_id", "is", null);
-  } else if (category !== "for_you") {
-    query = query.eq("category", category);
+  } else if (category !== "for_you" && feedFilter?.kind === "topic") {
+    if (withTags) {
+      const orClause = buildTopicOrFilter(feedFilter);
+      if (orClause) query = query.or(orClause);
+    } else {
+      // Tags column unavailable — fall back to case-insensitive category only.
+      query = query.ilike("category", feedFilter.label);
+    }
+  } else if (
+    category !== "for_you" &&
+    category !== "communities" &&
+    !feedFilter
+  ) {
+    if (withTags) {
+      const legacy = {
+        label: category,
+        value: String(category).toLowerCase(),
+        kind: "topic",
+        aliases: [category, String(category).toLowerCase()],
+      };
+      const orClause = buildTopicOrFilter(legacy);
+      if (orClause) query = query.or(orClause);
+    } else {
+      query = query.ilike("category", category);
+    }
   }
 
   // List cards: prefer short `excerpt`; never select full `content` in the main query.
@@ -596,6 +633,7 @@ async function fetchLatestArticles(
     published_at: blog.published_at ?? null,
     cover_image: sanitizeCoverImage(blog.cover_image),
     category: blog.category,
+    tags: normalizeTags(blog.tags),
     community_id: blog.community_id ?? null,
     profiles: blog.profiles,
     communities: blog.communities ?? null,

@@ -18,6 +18,7 @@ import {
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
 import { normalizeTags } from "@/app/lib/normalizeTags";
 import { revalidateFeed } from "@/app/lib/revalidateFeed";
+import { normalizeTags } from "@/app/lib/normalizeTags";
 import '@/app/write/write.css';
 import { useRouter } from 'next/navigation';
 
@@ -152,7 +153,7 @@ export default function EditPage({ params }) {
           title: title.trim(),
           content,
           category,
-          tags,
+          tags: normalizeTags(tags),
           cover_image,
           is_published: isPublished,
           community_id: communityId || null,

@@ -4,18 +4,9 @@ import { useState } from "react";
 import ArticleCard from "./ArticleCard";
 import ArticleFilters from "./Filters";
 import { useArticlesData } from "../../hooks/useArticleData";
+import { FEED_FILTERS } from "@/app/lib/taxonomy";
 
-const FILTERS = [
-  { label: "For You", value: "for_you" },
-  { label: "Communities", value: "communities" },
-  { label: "Backend", value: "backend" },
-  { label: "Design", value: "design" },
-  { label: "Technology", value: "Technology" },
-  { label: "React", value: "react" },
-  { label: "DSA", value: "dsa" },
-  { label: "UI", value: "UI" },
-  { label: "Flutter", value: "flutter" },
-];
+const FILTERS = FEED_FILTERS.map(({ label, value }) => ({ label, value }));
 
 export default function ArticlesSection({
   initialBlogs,
