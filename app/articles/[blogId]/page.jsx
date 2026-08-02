@@ -38,16 +38,20 @@ export async function generateMetadata({ params }) {
     buildExcerpt(blog.content, 160) ||
     "Read this story on Readme.";
   const cover = sanitizeCoverImage(blog.cover_image);
-  const path = `/articles/${blog.blog_id || blogId}`;
+  // Absolute URL must include basePath (/blogs). metadataBase does not add it.
+  const url = `https://readme.flutterkanpur.in/blogs/articles/${blog.blog_id || blogId}`;
 
   return {
     title,
     description,
+    alternates: {
+      canonical: url,
+    },
     openGraph: {
       type: "article",
       title,
       description,
-      url: path,
+      url,
       siteName: "Readme",
       ...(cover
         ? {
