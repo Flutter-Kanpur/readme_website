@@ -1,5 +1,5 @@
 import { supabase } from './index'
-import { buildTopicOrFilter, getFeedFilter } from '@/app/lib/taxonomy'
+import { blogMatchesTopic, getFeedFilter } from '@/app/lib/taxonomy'
 import { normalizeTags } from '@/app/lib/normalizeTags'
 
 /**
@@ -504,6 +504,8 @@ export async function getLatestArticle(category = "for_you") {
 }
 
 const FEED_LIMIT = 20;
+/** Wider window for topic chips so tag matches are not truncated before JS filter. */
+const TOPIC_FETCH_LIMIT = 80;
 
 async function fetchLatestArticles(
   category,
@@ -522,6 +524,14 @@ async function fetchLatestArticles(
     : "";
   const excerptField = withExcerpt ? `,\n      excerpt` : "";
   const publishedField = orderByPublishedAt ? `,\n      published_at` : "";
+  // Pull tags when available so topic chips can match in JS
+  // (PostgREST text[] vs jsonb `cs` filters are schema-dependent and often fail).
+  const feedFilter = getFeedFilter(category);
+  const isTopic =
+    feedFilter?.kind === "topic" ||
+    (category !== "for_you" &&
+      category !== "communities" &&
+      !feedFilter);
   const tagsField = withTags ? `,\n      tags` : "";
 
   const selectFields = withCommunity
@@ -572,50 +582,45 @@ async function fetchLatestArticles(
       nullsFirst: false,
     });
 
-  const feedFilter = getFeedFilter(category);
   if (category === "communities" || feedFilter?.value === "communities") {
     query = query.not("community_id", "is", null);
-  } else if (category !== "for_you" && feedFilter?.kind === "topic") {
-    if (withTags) {
-      const orClause = buildTopicOrFilter(feedFilter);
-      if (orClause) query = query.or(orClause);
-    } else {
-      // Tags column unavailable — fall back to case-insensitive category only.
-      query = query.ilike("category", feedFilter.label);
-    }
-  } else if (
-    category !== "for_you" &&
-    category !== "communities" &&
-    !feedFilter
-  ) {
-    if (withTags) {
-      const legacy = {
-        label: category,
-        value: String(category).toLowerCase(),
-        kind: "topic",
-        aliases: [category, String(category).toLowerCase()],
-      };
-      const orClause = buildTopicOrFilter(legacy);
-      if (orClause) query = query.or(orClause);
-    } else {
-      query = query.ilike("category", category);
-    }
   }
 
-  // List cards: prefer short `excerpt`; never select full `content` in the main query.
-  const { data: blogs, error } = await query.limit(FEED_LIMIT);
+  // Topic chips: do not apply brittle PostgREST tag operators here.
+  // Fetch a recent window and match category/tags in JS (handles text[] / jsonb / JSON string).
+  const fetchLimit = isTopic ? TOPIC_FETCH_LIMIT : FEED_LIMIT;
+  const { data: blogs, error } = await query.limit(fetchLimit);
 
   if (error) throw error;
   if (!blogs?.length) return [];
 
+  const topicFilter =
+    feedFilter?.kind === "topic"
+      ? feedFilter
+      : isTopic
+        ? {
+            label: category,
+            value: String(category).toLowerCase(),
+            kind: "topic",
+            aliases: [category, String(category).toLowerCase()],
+          }
+        : null;
+
+  const filtered = topicFilter
+    ? blogs.filter((blog) => blogMatchesTopic(blog, topicFilter))
+    : blogs;
+
+  const limited = filtered.slice(0, FEED_LIMIT);
+  if (!limited.length) return [];
+
   const excerptById = Object.fromEntries(
-    blogs.map((blog) => [blog.blog_id, blog.excerpt || ""]),
+    limited.map((blog) => [blog.blog_id, blog.excerpt || ""]),
   );
-  const missingIds = blogs
+  const missingIds = limited
     .filter((blog) => !excerptById[blog.blog_id])
     .map((blog) => blog.blog_id);
 
-  // Cap excerpt backfill to avoid large content egress (feed is ≤20).
+  // Cap excerpt backfill to avoid large content egress.
   if (missingIds.length > 0 && missingIds.length <= 5) {
     const { data: contentRows } = await supabase
       .from("blogs")
@@ -626,7 +631,7 @@ async function fetchLatestArticles(
     }
   }
 
-  return blogs.map((blog) => ({
+  return limited.map((blog) => ({
     blog_id: blog.blog_id,
     title: blog.title,
     created_at: blog.created_at,

@@ -3,6 +3,8 @@
  * Topic filters match blogs by category OR tags (see fetchLatestArticles).
  */
 
+import { normalizeTags } from './normalizeTags';
+
 /** Primary categories shown in Article Settings. */
 export const EDITOR_CATEGORIES = [
   'Technology',
@@ -40,9 +42,51 @@ export function getFeedFilter(value) {
   return FEED_FILTERS.find((f) => f.value === key) ?? null;
 }
 
+/** Lowercase alias set for a topic filter (label + value + aliases). */
+export function getTopicAliasSet(filter) {
+  if (!filter || filter.kind !== 'topic') return new Set();
+  const aliases = filter.aliases?.length
+    ? filter.aliases
+    : [filter.label, filter.value];
+  const set = new Set();
+  for (const alias of [filter.label, filter.value, ...aliases]) {
+    const trimmed = String(alias || '')
+      .trim()
+      .toLowerCase();
+    if (trimmed) set.add(trimmed);
+  }
+  return set;
+}
+
 /**
- * Casings to try for PostgREST `tags.cs.{Tag}` (array contains is case-sensitive).
- * Always includes lowercase, Title Case, and original alias text.
+ * True if blog category or any tag matches the topic filter (case-insensitive).
+ * Works for text[], jsonb arrays, or JSON-string tags after normalizeTags.
+ */
+export function blogMatchesTopic(blog, filter) {
+  if (!blog || !filter || filter.kind !== 'topic') return false;
+  const aliases = getTopicAliasSet(filter);
+  if (!aliases.size) return false;
+
+  const category = String(blog.category || '')
+    .trim()
+    .toLowerCase();
+  if (category && aliases.has(category)) return true;
+
+  const tags = normalizeTags(blog.tags).map((t) => t.toLowerCase());
+  for (const tag of tags) {
+    if (aliases.has(tag)) return true;
+    // Allow light partials: alias "ui" in "ui/ux", or tag "flutter apps" containing "flutter"
+    for (const alias of aliases) {
+      if (alias.length >= 3 && (tag.includes(alias) || alias.includes(tag))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Casings to try for PostgREST contains filters.
  */
 export function tagMatchVariants(alias) {
   const raw = String(alias || '').trim();
@@ -51,36 +95,4 @@ export function tagMatchVariants(alias) {
   const title = lower.replace(/\b\w/g, (c) => c.toUpperCase());
   const upper = raw.toUpperCase();
   return [...new Set([raw, lower, title, upper])];
-}
-
-function quotePostgrestValue(value) {
-  // Quote when needed so spaces / special chars survive inside `.or()`.
-  if (/^[a-zA-Z0-9_-]+$/.test(value)) return value;
-  return `"${String(value).replace(/"/g, '')}"`;
-}
-
-/**
- * Build PostgREST `.or()` clause for a topic filter:
- * category.ilike.<alias> OR tags contains any casing variant.
- */
-export function buildTopicOrFilter(filter) {
-  if (!filter || filter.kind !== 'topic') return null;
-
-  const aliases = filter.aliases?.length
-    ? filter.aliases
-    : [filter.label, filter.value];
-
-  const parts = [];
-  for (const alias of aliases) {
-    const trimmed = String(alias).trim().replace(/[,()]/g, '');
-    if (!trimmed) continue;
-    parts.push(`category.ilike.${quotePostgrestValue(trimmed)}`);
-    for (const variant of tagMatchVariants(trimmed)) {
-      const clean = variant.replace(/"/g, '');
-      // text[] contains: tags.cs.{"Exact Tag"}
-      parts.push(`tags.cs.{${quotePostgrestValue(clean)}}`);
-    }
-  }
-
-  return parts.length ? parts.join(',') : null;
 }
