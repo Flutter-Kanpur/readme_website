@@ -5,6 +5,10 @@ import Navbar from "@/app/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import ArticleCardAuthorInfo from "@/components/ArticleCardAuthorInfo/ArticleCardAuthorInfo";
 import { getArticle } from "@/app/lib/data/article";
+import {
+  buildExcerpt,
+  sanitizeCoverImage,
+} from "@/app/lib/supabase/queries";
 import { parseLikeCount } from "@/app/lib/supabase/likes";
 import { parseViewCount } from "@/app/lib/supabase/views";
 import RelatedArticlesSection from "./RelatedArticlesSection";
@@ -15,6 +19,57 @@ import ArticleEngagement from "./ArticleEngagement";
 import "./styles.css";
 
 export const revalidate = 60;
+
+export async function generateMetadata({ params }) {
+  const { blogId } = await params;
+  const data = await getArticle(blogId);
+  const blog = data?.blog;
+
+  if (!blog) {
+    return {
+      title: "Article not found",
+      description: "This article may have been removed or is unavailable.",
+    };
+  }
+
+  const title = blog.title?.trim() || "Untitled";
+  const description =
+    (typeof blog.excerpt === "string" && blog.excerpt.trim()) ||
+    buildExcerpt(blog.content, 160) ||
+    "Read this story on Readme.";
+  const cover = sanitizeCoverImage(blog.cover_image);
+  const path = `/articles/${blog.blog_id || blogId}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url: path,
+      siteName: "Readme",
+      ...(cover
+        ? {
+            images: [
+              {
+                url: cover,
+                width: 1200,
+                height: 630,
+                alt: title,
+              },
+            ],
+          }
+        : {}),
+    },
+    twitter: {
+      card: cover ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(cover ? { images: [cover] } : {}),
+    },
+  };
+}
 
 export default async function ArticlePage({ params }) {
   const { blogId } = await params;

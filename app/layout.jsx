@@ -7,9 +7,29 @@ const googleSans = Google_Sans({
   display: "swap",
 });
 
+const SITE_NAME = "Readme";
+const SITE_DESCRIPTION =
+  "Community-first publishing platform for creators — by Flutter Kanpur.";
+
 export const metadata = {
-  title: "Readme",
-  description: "Community-first publishing platform for creators",
+  metadataBase: new URL("https://readme.flutterkanpur.in"),
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export const viewport = {
