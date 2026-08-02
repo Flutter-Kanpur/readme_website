@@ -17,9 +17,19 @@ export default function ArticleCard({ blog }) {
   return (
     <div className="card">
       <div className="content">
-        <div>
-          <ArticleCardAuthorInfo author={blog.author} />
-        </div>
+        <ArticleCardAuthorInfo author={blog.author} />
+
+        {blog.cover_image && (
+          <div className="image-wrap">
+            <Image
+              src={blog.cover_image}
+              alt=""
+              width={800}
+              height={420}
+              className="image"
+            />
+          </div>
+        )}
 
         <h1 className="title">{blog.title}</h1>
 
@@ -41,16 +51,6 @@ export default function ArticleCard({ blog }) {
           </Link>
         </div>
       </div>
-
-      {blog.cover_image && (
-        <Image
-          src={blog.cover_image}
-          alt="cover"
-          width={160}
-          height={200}
-          className="image"
-        />
-      )}
     </div>
   );
 }

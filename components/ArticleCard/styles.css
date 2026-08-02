@@ -3,8 +3,7 @@
   padding: 32px;
   border-radius: 16px;
   display: flex;
-  justify-content: space-between;
-  gap: 32px;
+  flex-direction: column;
   border: 1px solid #e5e7eb;
   transition: all 0.3s ease;
   overflow: hidden;
@@ -24,15 +23,15 @@
 }
 
 .desc {
-  margin-top: 8px;
+  margin-top: 0;
   color: #666;
-  max-width: 500px;
+  max-width: 640px;
   word-break: break-word;
   overflow-wrap: anywhere;
 }
 
 .meta {
-  margin-top: 12px;
+  margin-top: 4px;
   display: flex;
   gap: 20px;
   font-size: 13px;
@@ -54,16 +53,40 @@
   text-decoration: underline;
 }
 
+.image-wrap {
+  width: 100%;
+  margin: 4px 0 2px;
+}
+
 .image {
-  width: 160px;
-  height: 200px;
+  width: 100%;
+  height: auto;
+  max-height: 280px;
+  aspect-ratio: 16 / 9;
   object-fit: cover;
   border-radius: 20px;
+  display: block;
 }
 
 .content {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 20px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .image {
+    max-height: 200px;
+    border-radius: 16px;
+  }
 }
