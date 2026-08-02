@@ -18,7 +18,6 @@ import {
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
 import { normalizeTags } from "@/app/lib/normalizeTags";
 import { revalidateFeed } from "@/app/lib/revalidateFeed";
-import { normalizeTags } from "@/app/lib/normalizeTags";
 import '@/app/write/write.css';
 import { useRouter } from 'next/navigation';
 
