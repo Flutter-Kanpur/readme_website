@@ -1,0 +1,34 @@
+{
+  "rewrites": [
+    {
+      "source": "/.well-known/assetlinks.json",
+      "destination": "/blogs/.well-known/assetlinks.json"
+    },
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "destination": "/blogs/.well-known/apple-app-site-association"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    },
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    },
+    {
+      "source": "/blogs/.well-known/apple-app-site-association",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" }
+      ]
+    }
+  ]
+}
