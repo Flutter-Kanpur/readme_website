@@ -494,11 +494,23 @@ export async function getLatestArticle(category = "for_you") {
             orderByPublishedAt: false,
           });
         }
-        console.error("getLatestArticle fallback error:", fallbackError);
+        console.error(
+          "getLatestArticle fallback error:",
+          fallbackError?.message ?? fallbackError,
+          fallbackError?.details ?? "",
+          fallbackError?.hint ?? "",
+          fallbackError?.code ?? "",
+        );
         return [];
       }
     }
-    console.error("getLatestArticle error:", error);
+    console.error(
+      "getLatestArticle error:",
+      error?.message ?? error,
+      error?.details ?? "",
+      error?.hint ?? "",
+      error?.code ?? "",
+    );
     return [];
   }
 }

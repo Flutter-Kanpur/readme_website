@@ -16,6 +16,7 @@ import RelatedArticlesSidebarSkeleton from "./RelatedArticlesSidebarSkeleton";
 import AuthorCardSection from "./AuthorCardSection";
 // import SidebarAd from "./SidebarAd";
 import ArticleEngagement from "./ArticleEngagement";
+import ArticleResponsesSection from "./ArticleResponsesSection";
 import "./styles.css";
 
 export const revalidate = 60;
@@ -131,6 +132,8 @@ export default async function ArticlePage({ params }) {
               className="article-content"
               dangerouslySetInnerHTML={{ __html: blog.content }}
             />
+
+            <ArticleResponsesSection blogId={blog.blog_id} />
           </article>
 
           <aside className="article-sidebar">

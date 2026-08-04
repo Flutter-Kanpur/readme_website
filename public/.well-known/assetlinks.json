@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.drishtant.readme",
+      "sha256_cert_fingerprints": [
+        "BE:D6:4C:87:2F:9E:1F:BF:3F:9E:79:26:8C:50:E6:FB:78:14:7B:27:A6:03:53:6D:A7:4E:11:F9:AA:79:90:A7"
+      ]
+    }
+  }
+]
