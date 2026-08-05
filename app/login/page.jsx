@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import AuthLayout from "../../components/auth/AuthLayout";
 import LeftPanel from "../../components/auth/LeftPanel";
@@ -18,6 +18,13 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const authError = new URLSearchParams(window.location.search).get("error");
+    if (authError) {
+      setMessage({ type: "error", text: authError });
+    }
+  }, []);
 
   const handleChange = (key, value) => setForm((p) => ({ ...p, [key]: value }));
 
