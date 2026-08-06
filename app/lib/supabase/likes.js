@@ -14,15 +14,16 @@ export function isLikesUnavailable(error) {
   const msg = (error.message || '').toLowerCase();
   return (
     code === 'PGRST205' ||
-    code === 'PGRST200' ||
     code === '42P01' ||
-    msg.includes('blog_likes') ||
-    msg.includes('does not exist') ||
-    msg.includes('schema cache') ||
-    msg.includes('could not find') ||
-    msg.includes('relationship')
+    (msg.includes('blog_likes') &&
+      (msg.includes('does not exist') ||
+        msg.includes('schema cache') ||
+        msg.includes('could not find')))
   );
 }
+
+const LIKES_SETUP_HINT =
+  'Likes are not available yet. Ask an admin to run supabase/migrations/011_blog_likes.sql in Supabase.';
 
 /** Parse like count from a blog row that may include `blog_likes (count)`. */
 export function parseLikeCount(blog) {
@@ -117,11 +118,9 @@ export async function likeBlog(blogId) {
 
   if (error) {
     if (isLikesUnavailable(error)) {
-      throw new Error(
-        'Support is not set up yet. Run supabase/migrations/011_blog_likes.sql in the Supabase SQL editor.',
-      );
+      throw new Error(LIKES_SETUP_HINT);
     }
-    // Already liked — treat as success (matches mobile UNIQUE handling).
+    // Already liked — idempotent (e.g. liked on mobile, toggling on web).
     if (error.code === '23505') return;
     throw error;
   }
@@ -141,10 +140,9 @@ export async function unlikeBlog(blogId) {
 
   if (error) {
     if (isLikesUnavailable(error)) {
-      throw new Error(
-        'Support is not set up yet. Run supabase/migrations/011_blog_likes.sql in the Supabase SQL editor.',
-      );
+      throw new Error(LIKES_SETUP_HINT);
     }
     throw error;
   }
+  // Zero rows deleted (already unliked) is OK.
 }

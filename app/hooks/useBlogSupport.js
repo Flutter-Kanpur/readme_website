@@ -154,13 +154,19 @@ export default function useBlogSupport(
       }
     } catch (error) {
       console.error('toggleSupport error:', formatLikeError(error));
+
+      // Duplicate like: keep UI liked and sync cache (already liked elsewhere).
+      if (!wasLiked && error?.code === '23505') {
+        setIsLiked(true);
+        setCachedLike(blogId, true);
+        setEngagementCounts(blogId, { likeCount: nextCount });
+        return;
+      }
+
       setIsLiked(wasLiked);
       setLikeCount(previousCount);
       setCachedLike(blogId, wasLiked);
       setEngagementCounts(blogId, { likeCount: previousCount });
-      if (error?.message?.includes('not set up yet')) {
-        alert(error.message);
-      }
     } finally {
       setActionLoading(false);
     }
