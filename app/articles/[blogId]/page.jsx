@@ -40,7 +40,7 @@ export async function generateMetadata({ params }) {
     buildExcerpt(blog.content, 160) ||
     "Read this story on Readme.";
   const cover = sanitizeCoverImage(blog.cover_image);
-  const shareImage = cover ? await resolveShareImageUrl(cover) : null;
+  const shareImage = cover ? resolveShareImageUrl(cover) : null;
   // Absolute URL must include basePath (/blogs). metadataBase does not add it.
   const url = `https://readme.flutterkanpur.in/blogs/articles/${blog.blog_id || blogId}`;
 
@@ -64,6 +64,7 @@ export async function generateMetadata({ params }) {
                 width: 1200,
                 height: 630,
                 alt: title,
+                type: 'image/jpeg',
               },
             ],
           }

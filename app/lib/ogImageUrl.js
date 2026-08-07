@@ -1,5 +1,4 @@
-/** WhatsApp / LinkedIn struggle with multi‑MB covers — compress above this. */
-export const OG_SHARE_SIZE_LIMIT_BYTES = 2 * 1024 * 1024;
+const OG_PROXY_PATH = '/api/og-image';
 
 const ALLOWED_IMAGE_HOSTS = new Set([
   'uktnmjykbyuvfsbtawwg.supabase.co',
@@ -15,17 +14,12 @@ export function getSiteOrigin() {
 }
 
 /**
- * Build a crawler-friendly preview URL via Next.js image optimizer.
- * Returns a resized image on the public domain (valid binary, no SSO).
+ * Same-domain share preview (1200×630 JPEG via /api/og-image).
+ * WhatsApp/Facebook prefer og:image on the page's domain, not Supabase URLs.
  */
 export function buildOgImageUrl(coverUrl) {
   const origin = getSiteOrigin();
-  const params = new URLSearchParams({
-    url: coverUrl,
-    w: '1200',
-    q: '75',
-  });
-  return `${origin}/blogs/_next/image?${params.toString()}`;
+  return `${origin}/blogs${OG_PROXY_PATH}?src=${encodeURIComponent(coverUrl)}`;
 }
 
 export function isAllowedOgSource(urlString) {
@@ -37,31 +31,9 @@ export function isAllowedOgSource(urlString) {
   }
 }
 
-/**
- * Use the raw cover for og:image when it is already small enough; otherwise
- * serve a resized copy through Next.js image optimizer (~400 KB JPEG/PNG).
- */
-export async function resolveShareImageUrl(coverUrl) {
+/** Always serve share previews from our domain so WhatsApp can fetch them. */
+export function resolveShareImageUrl(coverUrl) {
   if (!coverUrl) return null;
   if (!isAllowedOgSource(coverUrl)) return coverUrl;
-
-  try {
-    const res = await fetch(coverUrl, {
-      method: 'HEAD',
-      next: { revalidate: 3600 },
-    });
-
-    if (!res.ok) return buildOgImageUrl(coverUrl);
-
-    const lengthHeader = res.headers.get('content-length');
-    const bytes = lengthHeader ? Number.parseInt(lengthHeader, 10) : NaN;
-
-    if (!Number.isFinite(bytes) || bytes > OG_SHARE_SIZE_LIMIT_BYTES) {
-      return buildOgImageUrl(coverUrl);
-    }
-
-    return coverUrl;
-  } catch {
-    return buildOgImageUrl(coverUrl);
-  }
+  return buildOgImageUrl(coverUrl);
 }
