@@ -1,8 +1,6 @@
 /** WhatsApp / LinkedIn struggle with multi‑MB covers — compress above this. */
 export const OG_SHARE_SIZE_LIMIT_BYTES = 2 * 1024 * 1024;
 
-const OG_PROXY_PATH = '/api/og-image';
-
 const ALLOWED_IMAGE_HOSTS = new Set([
   'uktnmjykbyuvfsbtawwg.supabase.co',
 ]);
@@ -16,10 +14,18 @@ export function getSiteOrigin() {
   return process.env.NEXT_PUBLIC_SITE_ORIGIN || DEFAULT_SITE_ORIGIN;
 }
 
-/** App is served under /blogs — API URLs must include basePath for crawlers. */
-export function buildOgProxyUrl(coverUrl) {
+/**
+ * Build a crawler-friendly preview URL via Next.js image optimizer.
+ * Returns a resized image on the public domain (valid binary, no SSO).
+ */
+export function buildOgImageUrl(coverUrl) {
   const origin = getSiteOrigin();
-  return `${origin}/blogs${OG_PROXY_PATH}?src=${encodeURIComponent(coverUrl)}`;
+  const params = new URLSearchParams({
+    url: coverUrl,
+    w: '1200',
+    q: '75',
+  });
+  return `${origin}/blogs/_next/image?${params.toString()}`;
 }
 
 export function isAllowedOgSource(urlString) {
@@ -33,10 +39,11 @@ export function isAllowedOgSource(urlString) {
 
 /**
  * Use the raw cover for og:image when it is already small enough; otherwise
- * route through the compression API (1200×630 JPEG, ≤ ~500 KB).
+ * serve a resized copy through Next.js image optimizer (~400 KB JPEG/PNG).
  */
 export async function resolveShareImageUrl(coverUrl) {
-  if (!coverUrl || !isAllowedOgSource(coverUrl)) return coverUrl || null;
+  if (!coverUrl) return null;
+  if (!isAllowedOgSource(coverUrl)) return coverUrl;
 
   try {
     const res = await fetch(coverUrl, {
@@ -44,17 +51,17 @@ export async function resolveShareImageUrl(coverUrl) {
       next: { revalidate: 3600 },
     });
 
-    if (!res.ok) return buildOgProxyUrl(coverUrl);
+    if (!res.ok) return buildOgImageUrl(coverUrl);
 
     const lengthHeader = res.headers.get('content-length');
     const bytes = lengthHeader ? Number.parseInt(lengthHeader, 10) : NaN;
 
     if (!Number.isFinite(bytes) || bytes > OG_SHARE_SIZE_LIMIT_BYTES) {
-      return buildOgProxyUrl(coverUrl);
+      return buildOgImageUrl(coverUrl);
     }
 
     return coverUrl;
   } catch {
-    return buildOgProxyUrl(coverUrl);
+    return buildOgImageUrl(coverUrl);
   }
 }
