@@ -5,6 +5,7 @@ import Navbar from "@/app/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import ArticleCardAuthorInfo from "@/components/ArticleCardAuthorInfo/ArticleCardAuthorInfo";
 import { getArticle } from "@/app/lib/data/article";
+import { resolveShareImageUrl } from "@/app/lib/ogImageUrl";
 import {
   buildExcerpt,
   sanitizeCoverImage,
@@ -39,6 +40,7 @@ export async function generateMetadata({ params }) {
     buildExcerpt(blog.content, 160) ||
     "Read this story on Readme.";
   const cover = sanitizeCoverImage(blog.cover_image);
+  const shareImage = cover ? await resolveShareImageUrl(cover) : null;
   // Absolute URL must include basePath (/blogs). metadataBase does not add it.
   const url = `https://readme.flutterkanpur.in/blogs/articles/${blog.blog_id || blogId}`;
 
@@ -54,11 +56,11 @@ export async function generateMetadata({ params }) {
       description,
       url,
       siteName: "Readme",
-      ...(cover
+      ...(shareImage
         ? {
             images: [
               {
-                url: cover,
+                url: shareImage,
                 width: 1200,
                 height: 630,
                 alt: title,
@@ -68,10 +70,10 @@ export async function generateMetadata({ params }) {
         : {}),
     },
     twitter: {
-      card: cover ? "summary_large_image" : "summary",
+      card: shareImage ? "summary_large_image" : "summary",
       title,
       description,
-      ...(cover ? { images: [cover] } : {}),
+      ...(shareImage ? { images: [shareImage] } : {}),
     },
   };
 }
