@@ -7,13 +7,13 @@ const ALLOWED_IMAGE_HOSTS = new Set([
   'uktnmjykbyuvfsbtawwg.supabase.co',
 ]);
 
+/** Public site origin — must match metadataBase in app/layout.jsx. */
+const DEFAULT_SITE_ORIGIN = 'https://readme.flutterkanpur.in';
+
 export function getSiteOrigin() {
-  return (
-    process.env.NEXT_PUBLIC_SITE_ORIGIN ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'https://readme.flutterkanpur.in')
-  );
+  // Never use VERCEL_URL here: deployment URLs can be SSO-protected, so
+  // WhatsApp/Facebook cannot fetch og:image from them.
+  return process.env.NEXT_PUBLIC_SITE_ORIGIN || DEFAULT_SITE_ORIGIN;
 }
 
 /** App is served under /blogs — API URLs must include basePath for crawlers. */
