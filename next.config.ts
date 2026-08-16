@@ -38,6 +38,16 @@ const nextConfig: NextConfig = {
         destination: `${origin}/blogs/.well-known/apple-app-site-association`,
         basePath: false,
       },
+      {
+        source: "/sitemap.xml",
+        destination: `${origin}/blogs/sitemap.xml`,
+        basePath: false,
+      },
+      {
+        source: "/robots.txt",
+        destination: `${origin}/blogs/robots.txt`,
+        basePath: false,
+      },
     ];
   },
   images: {

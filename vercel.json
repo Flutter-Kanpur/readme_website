@@ -7,6 +7,14 @@
     {
       "source": "/.well-known/apple-app-site-association",
       "destination": "/blogs/.well-known/apple-app-site-association"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/blogs/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/blogs/robots.txt"
     }
   ],
   "headers": [
