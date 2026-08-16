@@ -5,11 +5,12 @@ import Navbar from "@/app/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import ArticleCardAuthorInfo from "@/components/ArticleCardAuthorInfo/ArticleCardAuthorInfo";
 import { getArticle } from "@/app/lib/data/article";
-import { resolveShareImageUrl } from "@/app/lib/ogImageUrl";
 import {
-  buildExcerpt,
-  sanitizeCoverImage,
-} from "@/app/lib/supabase/queries";
+  buildArticleJsonLd,
+  getArticleShareFields,
+  serializeJsonLd,
+} from "@/app/lib/articleSeo";
+import { resolveShareImageUrl } from "@/app/lib/ogImageUrl";
 import { parseLikeCount } from "@/app/lib/supabase/likes";
 import { parseViewCount } from "@/app/lib/supabase/views";
 import RelatedArticlesSection from "./RelatedArticlesSection";
@@ -34,15 +35,10 @@ export async function generateMetadata({ params }) {
     };
   }
 
-  const title = blog.title?.trim() || "Untitled";
-  const description =
-    (typeof blog.excerpt === "string" && blog.excerpt.trim()) ||
-    buildExcerpt(blog.content, 160) ||
-    "Read this story on Readme.";
-  const cover = sanitizeCoverImage(blog.cover_image);
+  const { title, description, cover, url, publishedTime, modifiedTime } =
+    getArticleShareFields(blog, blogId);
   const shareImage = cover ? resolveShareImageUrl(cover) : null;
-  // Absolute URL must include basePath (/blogs). metadataBase does not add it.
-  const url = `https://readme.flutterkanpur.in/blogs/articles/${blog.blog_id || blogId}`;
+  const authorName = data.author?.name;
 
   return {
     title,
@@ -56,6 +52,9 @@ export async function generateMetadata({ params }) {
       description,
       url,
       siteName: "Readme",
+      ...(publishedTime ? { publishedTime } : {}),
+      ...(modifiedTime ? { modifiedTime } : {}),
+      ...(authorName ? { authors: [authorName] } : {}),
       ...(shareImage
         ? {
             images: [
@@ -64,7 +63,7 @@ export async function generateMetadata({ params }) {
                 width: 1200,
                 height: 630,
                 alt: title,
-                type: 'image/jpeg',
+                type: "image/jpeg",
               },
             ],
           }
@@ -95,8 +94,21 @@ export default async function ArticlePage({ params }) {
       list.findIndex((item) => item.authorId === profile.authorId) === index,
   );
 
+  const articleJsonLd = buildArticleJsonLd({
+    blog,
+    author,
+    coauthors,
+    blogId,
+  });
+
   return (
     <div className="article-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd(articleJsonLd),
+        }}
+      />
       <Navbar />
       <div className="article-page-layout">
         <div className="article-container">
