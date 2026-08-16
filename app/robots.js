@@ -1,4 +1,4 @@
-const SITE_ORIGIN = 'https://readme.flutterkanpur.in';
+const SITE_ORIGIN = 'https://readme.flutterkanpur.in/blogs';
 
 /** @type {import('next').MetadataRoute.Robots} */
 export default function robots() {
