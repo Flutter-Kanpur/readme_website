@@ -11,6 +11,7 @@ const SEARCH_LIMIT = 20;
 
 const SEARCH_SELECT = `
   blog_id,
+  slug,
   title,
   excerpt,
   category,

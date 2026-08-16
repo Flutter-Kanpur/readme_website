@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import ArticleCardAuthorInfo from "@/components/ArticleCardAuthorInfo/ArticleCardAuthorInfo";
 import ArticleCardEngagement from "@/app/components/ArticleCardEngagement";
+import { getArticlePath } from "@/app/lib/blogSlug";
 import "./styles.css";
 
 export default function ArticleCard({ blog }) {
@@ -46,7 +47,7 @@ export default function ArticleCard({ blog }) {
 
         <div className="meta">
           <span className="link">#{blog.category}</span>
-          <Link href={`/articles/${blog.blog_id}`} className="link">
+          <Link href={getArticlePath(blog)} className="link">
             Read More →
           </Link>
         </div>

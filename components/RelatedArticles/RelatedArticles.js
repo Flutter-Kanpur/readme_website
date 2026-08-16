@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getArticlePath } from "@/app/lib/blogSlug";
 import "./styles.css";
 
 export default function RelatedArticles({ articles = [] }) {
@@ -13,7 +14,7 @@ export default function RelatedArticles({ articles = [] }) {
       <ul className="related-list">
         {articles.map((article) => (
           <li key={article.blog_id} className="related-item">
-            <Link href={`/articles/${article.blog_id}`} prefetch>
+            <Link href={getArticlePath(article)} prefetch>
               {article.title}
             </Link>
           </li>

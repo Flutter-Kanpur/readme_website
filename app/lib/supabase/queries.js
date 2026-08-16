@@ -1,4 +1,5 @@
 import { supabase } from './index'
+import { getArticleIdentifierColumn } from '@/app/lib/blogSlug'
 import { blogMatchesTopic, getFeedFilter } from '@/app/lib/taxonomy'
 import { normalizeTags } from '@/app/lib/normalizeTags'
 
@@ -47,6 +48,7 @@ export async function getProfileById(userId) {
 
 const AUTHOR_BLOG_LIST_FIELDS = `
   blog_id,
+  slug,
   title,
   excerpt,
   created_at,
@@ -97,7 +99,8 @@ export async function getPublishedBlogsByAuthor(authorId, { limit = 50 } = {}) {
       msg.includes('blog_likes') ||
       msg.includes('view_count') ||
       msg.includes('relationship') ||
-      msg.includes('schema cache')
+      msg.includes('schema cache') ||
+      msg.includes('slug')
     ) {
       const { data, error: fallbackError } = await supabase
         .from('blogs')
@@ -171,14 +174,15 @@ function mapProfileToAuthor(profile) {
   }
 }
 
-/** Blog + author in one round-trip (replaces getBlogDetailByBlogId + getAuthorByBlogId on detail page). */
-export async function getArticleWithAuthor(blogId) {
-  if (!blogId) return null
+/** Blog + author in one round-trip. `identifier` is a public slug or legacy blog_id UUID. */
+export async function getArticleWithAuthor(identifier) {
+  if (!identifier) return null
 
   try {
-    return await fetchArticleWithAuthor(blogId, {
+    return await fetchArticleWithAuthor(identifier, {
       withCommunity: true,
       withEngagement: true,
+      withSlug: true,
     })
   } catch (error) {
     const msg = error?.message?.toLowerCase() ?? ''
@@ -193,12 +197,19 @@ export async function getArticleWithAuthor(blogId) {
       msg.includes('published_at') ||
       msg.includes('relationship') ||
       msg.includes('pgrst200')
+    const missingSlug =
+      msg.includes('slug') &&
+      (msg.includes('column') ||
+        msg.includes('schema cache') ||
+        msg.includes('does not exist') ||
+        msg.includes('pgrst204'))
 
-    if (missingCommunity || missingEngagement) {
+    if (missingCommunity || missingEngagement || missingSlug) {
       try {
-        return await fetchArticleWithAuthor(blogId, {
+        return await fetchArticleWithAuthor(identifier, {
           withCommunity: !missingCommunity,
           withEngagement: !missingEngagement,
+          withSlug: !missingSlug,
         })
       } catch (fallbackError) {
         const fallbackMsg = fallbackError?.message?.toLowerCase() ?? ''
@@ -207,12 +218,14 @@ export async function getArticleWithAuthor(blogId) {
           fallbackMsg.includes('blog_likes') ||
           fallbackMsg.includes('view_count') ||
           fallbackMsg.includes('communities') ||
-          fallbackMsg.includes('blog_coauthors')
+          fallbackMsg.includes('blog_coauthors') ||
+          fallbackMsg.includes('slug')
         ) {
           try {
-            return await fetchArticleWithAuthor(blogId, {
+            return await fetchArticleWithAuthor(identifier, {
               withCommunity: false,
               withEngagement: false,
+              withSlug: false,
             })
           } catch (bareError) {
             console.error(
@@ -235,14 +248,15 @@ export async function getArticleWithAuthor(blogId) {
 }
 
 async function fetchArticleWithAuthor(
-  blogId,
-  { withCommunity = true, withEngagement = true } = {},
+  identifier,
+  { withCommunity = true, withEngagement = true, withSlug = true } = {},
 ) {
   const engagementFields = withEngagement
     ? `,
       view_count,
       like_count`
     : ''
+  const slugField = withSlug ? ',\n      slug' : ''
 
   const selectFields = withCommunity
     ? `
@@ -255,7 +269,7 @@ async function fetchArticleWithAuthor(
       category,
       is_published,
       author_id,
-      community_id${engagementFields},
+      community_id${slugField}${engagementFields},
       profiles (
         id,
         name,
@@ -288,7 +302,7 @@ async function fetchArticleWithAuthor(
       cover_image,
       category,
       is_published,
-      author_id${engagementFields},
+      author_id${slugField}${engagementFields},
       profiles (
         id,
         name,
@@ -298,10 +312,12 @@ async function fetchArticleWithAuthor(
       )
     `
 
+  const lookupColumn = getArticleIdentifierColumn(identifier)
+
   const { data, error } = await supabase
     .from('blogs')
     .select(selectFields)
-    .eq('blog_id', blogId)
+    .eq(lookupColumn, identifier)
     .eq('is_published', true)
     .single()
 
@@ -408,6 +424,7 @@ export async function getRelatedArticlesByAuthorId(authorId, currentBlogId) {
     .from('blogs')
     .select(`
       blog_id,
+      slug,
       title,
       created_at,
       cover_image
@@ -436,6 +453,7 @@ export async function getLatestArticle(category = "for_you") {
       withCommunity: true,
       withEngagement: true,
       withExcerpt: true,
+      withSlug: true,
     });
   } catch (error) {
     const msg = error?.message?.toLowerCase() ?? "";
@@ -464,14 +482,27 @@ export async function getLatestArticle(category = "for_you") {
         msg.includes("schema cache") ||
         msg.includes("does not exist") ||
         msg.includes("pgrst204"));
+    const missingSlug =
+      msg.includes("slug") &&
+      (msg.includes("column") ||
+        msg.includes("schema cache") ||
+        msg.includes("does not exist") ||
+        msg.includes("pgrst204"));
 
-    if (missingCommunity || missingEngagement || missingExcerpt || missingTags) {
+    if (
+      missingCommunity ||
+      missingEngagement ||
+      missingExcerpt ||
+      missingTags ||
+      missingSlug
+    ) {
       try {
         return await fetchLatestArticles(category, {
           withCommunity: !missingCommunity,
           withEngagement: !missingEngagement,
           withExcerpt: !missingExcerpt,
           withTags: !missingTags,
+          withSlug: !missingSlug,
           orderByPublishedAt: !msg.includes("published_at"),
         });
       } catch (fallbackError) {
@@ -484,13 +515,15 @@ export async function getLatestArticle(category = "for_you") {
           fallbackMsg.includes("communities") ||
           fallbackMsg.includes("blog_coauthors") ||
           fallbackMsg.includes("excerpt") ||
-          fallbackMsg.includes("tags")
+          fallbackMsg.includes("tags") ||
+          fallbackMsg.includes("slug")
         ) {
           return fetchLatestArticles(category, {
             withCommunity: false,
             withEngagement: false,
             withExcerpt: false,
             withTags: false,
+            withSlug: false,
             orderByPublishedAt: false,
           });
         }
@@ -526,6 +559,7 @@ async function fetchLatestArticles(
     withEngagement = true,
     withExcerpt = true,
     withTags = true,
+    withSlug = true,
     orderByPublishedAt = true,
   } = {},
 ) {
@@ -545,10 +579,11 @@ async function fetchLatestArticles(
       category !== "communities" &&
       !feedFilter);
   const tagsField = withTags ? `,\n      tags` : "";
+  const slugField = withSlug ? `,\n      slug` : "";
 
   const selectFields = withCommunity
     ? `
-      blog_id,
+      blog_id${slugField},
       title${excerptField},
       created_at${publishedField},
       cover_image,
@@ -574,7 +609,7 @@ async function fetchLatestArticles(
       )
     `
     : `
-      blog_id,
+      blog_id${slugField},
       title${excerptField},
       created_at${publishedField},
       cover_image,
@@ -645,6 +680,7 @@ async function fetchLatestArticles(
 
   return limited.map((blog) => ({
     blog_id: blog.blog_id,
+    slug: blog.slug ?? null,
     title: blog.title,
     created_at: blog.created_at,
     published_at: blog.published_at ?? null,

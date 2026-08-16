@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import ArticleCardEngagement from "@/app/components/ArticleCardEngagement";
+import { getArticlePath } from "@/app/lib/blogSlug";
 
 function getAuthorLine(article) {
   const primary = article.profiles?.name || "Anonymous";
@@ -53,7 +54,7 @@ export default function ArticleCard({ article }) {
   const community = communities;
 
   return (
-    <Link href={`/articles/${blog_id}`} className="block transition-all hover:scale-[1.01] active:scale-[0.99] group">
+    <Link href={getArticlePath(article)} className="block transition-all hover:scale-[1.01] active:scale-[0.99] group">
       <div className="bg-white p-6 md:p-8 rounded-[28px] border border-gray-200 shadow-sm transition-all hover:border-gray-300 hover:shadow-md">
         <div className="flex flex-wrap items-center gap-2 mb-4">
           {community?.slug && (

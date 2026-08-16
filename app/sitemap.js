@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { getArticlePath } from '@/app/lib/blogSlug';
 
 const SITE_ORIGIN = 'https://readme.flutterkanpur.in';
 const APP_BASE = `${SITE_ORIGIN}/blogs`;
@@ -48,7 +49,7 @@ export default async function sitemap() {
     await Promise.all([
       supabase
         .from('blogs')
-        .select('blog_id, published_at, created_at')
+        .select('blog_id, slug, published_at, created_at')
         .eq('is_published', true)
         .order('published_at', { ascending: false, nullsFirst: false }),
       supabase.from('communities').select('slug, created_at').order('name'),
@@ -60,7 +61,7 @@ export default async function sitemap() {
   for (const blog of blogs ?? []) {
     if (!blog?.blog_id) continue;
     entries.push({
-      url: appUrl(`/articles/${blog.blog_id}`),
+      url: appUrl(getArticlePath(blog)),
       lastModified: toLastModified(blog.published_at ?? blog.created_at),
       changeFrequency: 'weekly',
       priority: 0.7,

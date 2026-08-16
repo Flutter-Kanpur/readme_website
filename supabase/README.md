@@ -14,6 +14,7 @@ Run each SQL file once in the [Supabase SQL editor](https://supabase.com/dashboa
 | `migrations/008_community_newsletters.sql` | Monthly community newsletters + opt-in subscribers |
 | `migrations/009_community_newsletter_uploads.sql` | Newsletter file attachments + `community-newsletters` storage bucket |
 | `migrations/010_community_followers.sql` | Community follow — `community_followers` table + RLS |
+| `migrations/014_blog_slug.sql` | Public article slugs (`blogs.slug`) + backfill for published posts |
 
 After each migration: **Settings → API → Reload schema**.
 

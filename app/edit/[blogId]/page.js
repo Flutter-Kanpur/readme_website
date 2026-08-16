@@ -16,6 +16,7 @@ import {
   canPublishInCommunity,
 } from "@/app/lib/supabase/communities";
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
+import { resolveUniqueBlogSlug } from "@/app/lib/supabase/blogSlugs";
 import { normalizeTags } from "@/app/lib/normalizeTags";
 import { revalidateFeed } from "@/app/lib/revalidateFeed";
 import '@/app/write/write.css';
@@ -146,9 +147,7 @@ export default function EditPage({ params }) {
         supabase,
       );
 
-      const { error } = await supabase
-        .from('blogs')
-        .update({
+      const updatePayload = {
           title: title.trim(),
           content,
           category,
@@ -159,7 +158,18 @@ export default function EditPage({ params }) {
           ...(isPublished
             ? { published_at: new Date().toISOString() }
             : {}),
-        })
+        };
+
+      if (isPublished) {
+        updatePayload.slug = await resolveUniqueBlogSlug(supabase, title.trim(), {
+          excludeBlogId: blogId,
+          blogIdForFallback: blogId,
+        });
+      }
+
+      const { error } = await supabase
+        .from('blogs')
+        .update(updatePayload)
         .eq('blog_id', blogId)
         .eq('author_id', user.id);
 

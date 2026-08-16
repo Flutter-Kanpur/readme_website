@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Navbar from "@/app/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import ArticleCardAuthorInfo from "@/components/ArticleCardAuthorInfo/ArticleCardAuthorInfo";
@@ -10,6 +10,7 @@ import {
   getArticleShareFields,
   serializeJsonLd,
 } from "@/app/lib/articleSeo";
+import { getArticlePath, isBlogUuid } from "@/app/lib/blogSlug";
 import { resolveShareImageUrl } from "@/app/lib/ogImageUrl";
 import { parseLikeCount } from "@/app/lib/supabase/likes";
 import { parseViewCount } from "@/app/lib/supabase/views";
@@ -36,7 +37,7 @@ export async function generateMetadata({ params }) {
   }
 
   const { title, description, cover, url, publishedTime, modifiedTime } =
-    getArticleShareFields(blog, blogId);
+    getArticleShareFields(blog);
   const shareImage = cover ? resolveShareImageUrl(cover) : null;
   const authorName = data.author?.name;
 
@@ -79,14 +80,18 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ArticlePage({ params }) {
-  const { blogId } = await params;
-  const data = await getArticle(blogId);
+  const { blogId: identifier } = await params;
+  const data = await getArticle(identifier);
 
   if (!data?.blog) {
     notFound();
   }
 
   const { blog, author, coauthors = [], community } = data;
+
+  if (isBlogUuid(identifier) && blog.slug) {
+    permanentRedirect(getArticlePath(blog));
+  }
 
   const allAuthors = [author, ...coauthors].filter(
     (profile, index, list) =>
@@ -98,7 +103,6 @@ export default async function ArticlePage({ params }) {
     blog,
     author,
     coauthors,
-    blogId,
   });
 
   return (

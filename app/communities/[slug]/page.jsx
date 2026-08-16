@@ -49,6 +49,7 @@ export default async function CommunityProfilePage({ params }) {
 
   const articles = blogs.map((blog) => ({
     blog_id: blog.blog_id,
+    slug: blog.slug ?? null,
     title: blog.title,
     created_at: blog.created_at,
     cover_image: sanitizeCoverImage(blog.cover_image),

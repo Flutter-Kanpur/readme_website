@@ -1,3 +1,5 @@
+import { withBasePath } from '@/app/lib/basePath';
+import { getArticlePath } from '@/app/lib/blogSlug';
 import {
   buildExcerpt,
   sanitizeCoverImage,
@@ -6,14 +8,14 @@ import {
 const SITE_ORIGIN = 'https://readme.flutterkanpur.in';
 const PUBLISHER_LOGO = `${SITE_ORIGIN}/blogs/icon.png`;
 
-export function getArticleShareFields(blog, blogId) {
+export function getArticleShareFields(blog) {
   const title = blog.title?.trim() || 'Untitled';
   const description =
     (typeof blog.excerpt === 'string' && blog.excerpt.trim()) ||
     buildExcerpt(blog.content, 160) ||
     'Read this story on Readme.';
   const cover = sanitizeCoverImage(blog.cover_image);
-  const url = `${SITE_ORIGIN}/blogs/articles/${blog.blog_id || blogId}`;
+  const url = `${SITE_ORIGIN}${withBasePath(getArticlePath(blog))}`;
   const publishedTime = blog.published_at ?? blog.created_at ?? undefined;
   const modifiedTime = blog.published_at ?? blog.created_at ?? undefined;
 
@@ -42,9 +44,9 @@ function mapAuthorPerson(author) {
   return person;
 }
 
-export function buildArticleJsonLd({ blog, author, coauthors = [], blogId }) {
+export function buildArticleJsonLd({ blog, author, coauthors = [] }) {
   const { title, description, cover, url, publishedTime, modifiedTime } =
-    getArticleShareFields(blog, blogId);
+    getArticleShareFields(blog);
 
   const authors = [author, ...coauthors]
     .map(mapAuthorPerson)

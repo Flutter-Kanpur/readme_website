@@ -312,6 +312,7 @@ export async function getCommunityPublishedBlogs(communityId, { limit = 30 } = {
 
   const listSelect = `
     blog_id,
+    slug,
     title,
     excerpt,
     created_at,
@@ -366,7 +367,8 @@ export async function getCommunityPublishedBlogs(communityId, { limit = 30 } = {
       msg.includes('view_count') ||
       msg.includes('relationship') ||
       msg.includes('schema cache') ||
-      msg.includes('excerpt')
+      msg.includes('excerpt') ||
+      msg.includes('slug')
     ) {
       const { data, error: fallbackError } = await supabase
         .from('blogs')

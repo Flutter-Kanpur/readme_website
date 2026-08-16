@@ -15,6 +15,7 @@ import {
   canPublishInCommunity,
 } from "@/app/lib/supabase/communities";
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
+import { resolveUniqueBlogSlug } from "@/app/lib/supabase/blogSlugs";
 import { revalidateFeed } from "@/app/lib/revalidateFeed";
 import { normalizeTags } from "@/app/lib/normalizeTags";
 import './write.css';
@@ -103,6 +104,13 @@ export default function WritePage() {
     };
 
     let blogId = draftId;
+
+    if (isPublished) {
+      payload.slug = await resolveUniqueBlogSlug(supabase, title.trim(), {
+        excludeBlogId: draftId,
+        blogIdForFallback: draftId,
+      });
+    }
 
     if (draftId) {
       const { error } = await supabase
