@@ -16,6 +16,7 @@ import { preloadLikedBlogIds } from '@/app/lib/supabase/likeCache'
 import useFollowAuthor from '@/app/hooks/useFollowAuthor'
 import CustomButton from '@/components/Button/CustomButton'
 import Footer from '@/components/Footer/Footer'
+import { APP_VERSION } from '@/app/lib/appVersion'
 import './styles.css'
 
 export default function ProfilePage() {
@@ -221,6 +222,8 @@ export default function ProfilePage() {
             />
           </div>
         </div>
+
+        <p className="profile-version">Version {APP_VERSION}</p>
       </div>
       <Footer />
     </div>
