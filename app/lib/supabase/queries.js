@@ -447,13 +447,14 @@ export async function getRelatedArticlesByAuthorId(authorId, currentBlogId) {
 }
 
 
-export async function getLatestArticle(category = "for_you") {
+export async function getLatestArticle(category = "for_you", { limit } = {}) {
   try {
     return await fetchLatestArticles(category, {
       withCommunity: true,
       withEngagement: true,
       withExcerpt: true,
       withSlug: true,
+      limit,
     });
   } catch (error) {
     const msg = error?.message?.toLowerCase() ?? "";
@@ -504,6 +505,7 @@ export async function getLatestArticle(category = "for_you") {
           withTags: !missingTags,
           withSlug: !missingSlug,
           orderByPublishedAt: !msg.includes("published_at"),
+          limit,
         });
       } catch (fallbackError) {
         const fallbackMsg = fallbackError?.message?.toLowerCase() ?? "";
@@ -525,6 +527,7 @@ export async function getLatestArticle(category = "for_you") {
             withTags: false,
             withSlug: false,
             orderByPublishedAt: false,
+            limit,
           });
         }
         console.error(
@@ -561,6 +564,7 @@ async function fetchLatestArticles(
     withTags = true,
     withSlug = true,
     orderByPublishedAt = true,
+    limit,
   } = {},
 ) {
   const engagementFields = withEngagement
@@ -635,7 +639,7 @@ async function fetchLatestArticles(
 
   // Topic chips: do not apply brittle PostgREST tag operators here.
   // Fetch a recent window and match category/tags in JS (handles text[] / jsonb / JSON string).
-  const fetchLimit = isTopic ? TOPIC_FETCH_LIMIT : FEED_LIMIT;
+  const fetchLimit = limit ?? (isTopic ? TOPIC_FETCH_LIMIT : FEED_LIMIT);
   const { data: blogs, error } = await query.limit(fetchLimit);
 
   if (error) throw error;

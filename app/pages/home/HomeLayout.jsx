@@ -2,7 +2,7 @@ import Navbar from "../../components/Navbar/Navbar";
 import Hero from "../../components/HomepageComponents/Hero";
 import SearchBar from "../../components/HomepageComponents/SearchBar";
 import Footer from "@/components/Footer/Footer";
-import ArticlesSection from "../../components/HomepageComponents/ArticleSection";
+import HomeArticleSection from "../../components/HomepageComponents/HomeArticleSection";
 
 export default function HomeLayout({ initialBlogs }) {
   return (
@@ -10,8 +10,8 @@ export default function HomeLayout({ initialBlogs }) {
       <Navbar />
       <Hero />
       <SearchBar />
-      <section id="latest-articles">
-        <ArticlesSection initialBlogs={initialBlogs} />
+      <section id="latest-articles" className="py-16 px-4 sm:px-6">
+        <HomeArticleSection initialBlogs={initialBlogs} />
       </section>
       <Footer />
     </main>
