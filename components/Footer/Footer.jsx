@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { PLAY_STORE_URL } from "@/app/lib/playStore";
+import { APP_VERSION_LABEL } from "@/app/lib/appVersion";
 import rawIcon from "@/app/raw-icon.png";
 import googlePlayIcon from "@/public/assets/icons/google-play.png";
 import "./styles.css";
@@ -118,6 +119,7 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} Readme by Flutter Kanpur. All
             rights reserved.
           </p>
+          <p className="footer-version">{APP_VERSION_LABEL}</p>
         </div>
       </div>
     </footer>

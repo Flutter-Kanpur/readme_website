@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
-import path from 'path';
 import sharp from 'sharp';
-import { isAllowedOgSource } from '@/app/lib/ogImageUrl';
+import { getDefaultShareImageUrl, isAllowedOgSource } from '@/app/lib/ogImageUrl';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,10 +16,17 @@ const CACHE_CONTROL =
 
 let cachedDefaultBuffer = null;
 
+// public/ is served as a static asset by Vercel, not bundled into this
+// route's serverless function — fs.readFile(process.cwd() + '/public/...')
+// reliably throws in production even though the file exists in the repo.
+// Fetch it over HTTP instead, the same way the browser/crawlers do.
 async function getDefaultOgBuffer() {
   if (cachedDefaultBuffer) return cachedDefaultBuffer;
-  const filePath = path.join(process.cwd(), 'public', 'assets', 'og-default.jpg');
-  cachedDefaultBuffer = await readFile(filePath);
+  const res = await fetch(getDefaultShareImageUrl(), { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`Default OG asset fetch failed: HTTP ${res.status}`);
+  }
+  cachedDefaultBuffer = Buffer.from(await res.arrayBuffer());
   return cachedDefaultBuffer;
 }
 

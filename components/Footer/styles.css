@@ -200,6 +200,14 @@
   letter-spacing: 0.01em;
 }
 
+.footer-version {
+  margin: 0.35rem 0 0;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 900px) {
   .footer-grid {
     grid-template-columns: 1fr;
