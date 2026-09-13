@@ -14,7 +14,7 @@ export default function RelatedArticles({ articles = [] }) {
       <ul className="related-list">
         {articles.map((article) => (
           <li key={article.blog_id} className="related-item">
-            <Link href={getArticlePath(article)} prefetch>
+            <Link href={getArticlePath(article)} prefetch={false}>
               {article.title}
             </Link>
           </li>

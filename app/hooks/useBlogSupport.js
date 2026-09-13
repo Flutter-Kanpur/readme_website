@@ -10,7 +10,11 @@ import {
   formatLikeError,
   isLikesUnavailable,
 } from '@/app/lib/supabase/likes';
-import { getCachedLike, setCachedLike } from '@/app/lib/supabase/likeCache';
+import {
+  getCachedLike,
+  setCachedLike,
+  getPendingPreload,
+} from '@/app/lib/supabase/likeCache';
 import {
   getEngagementCounts,
   getEngagementVersion,
@@ -75,6 +79,20 @@ export default function useBlogSupport(
     let cancelled = false;
     (async () => {
       try {
+        // A list-level batch preload (see likeCache.js) may already be in
+        // flight for this blogId — join it instead of firing our own query.
+        const pending = getPendingPreload(blogId);
+        if (pending) {
+          await pending;
+          if (cancelled) return;
+          const cached = getCachedLike(blogId);
+          if (cached != null) {
+            setIsLiked(cached);
+            setLikedLoaded(true);
+            return;
+          }
+        }
+
         let user = null;
         try {
           user = await getSafeUser();

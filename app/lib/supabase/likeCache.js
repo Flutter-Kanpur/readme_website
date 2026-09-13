@@ -7,6 +7,10 @@ const cache = {
   userId: null,
 };
 
+// Tracks a preloadLikedBlogIds() call while it's in flight, so cards that
+// mount before it resolves can await it instead of firing their own query.
+let pendingPreload = null; // { ids: Set<string>, promise: Promise<void> } | null
+
 export function getCachedLike(blogId) {
   if (!cache.likedByBlogId) return null;
   return cache.likedByBlogId[blogId] ?? false;
@@ -22,31 +26,45 @@ export function invalidateLikeCache() {
   cache.userId = null;
 }
 
-export async function preloadLikedBlogIds(blogIds) {
+export function getPendingPreload(blogId) {
+  return pendingPreload?.ids.has(blogId) ? pendingPreload.promise : null;
+}
+
+export function preloadLikedBlogIds(blogIds) {
   if (!blogIds?.length) {
     cache.likedByBlogId = {};
-    return;
+    return Promise.resolve();
   }
 
-  const { getSafeUser } = await import('./auth');
-  const { fetchLikedBlogIds } = await import('./likes');
+  const ids = new Set(blogIds);
+  const promise = (async () => {
+    const { getSafeUser } = await import('./auth');
+    const { fetchLikedBlogIds } = await import('./likes');
 
-  let user = null;
-  try {
-    user = await getSafeUser();
-  } catch {
-    user = null;
-  }
+    let user = null;
+    try {
+      user = await getSafeUser();
+    } catch {
+      user = null;
+    }
 
-  if (!user) {
-    cache.likedByBlogId = {};
-    cache.userId = null;
-    return;
-  }
+    if (!user) {
+      cache.likedByBlogId = {};
+      cache.userId = null;
+      return;
+    }
 
-  const likedIds = await fetchLikedBlogIds(blogIds, { user });
-  cache.userId = user.id;
-  cache.likedByBlogId = Object.fromEntries(
-    blogIds.map((id) => [id, likedIds.has(id)]),
-  );
+    const likedIds = await fetchLikedBlogIds(blogIds, { user });
+    cache.userId = user.id;
+    cache.likedByBlogId = Object.fromEntries(
+      blogIds.map((id) => [id, likedIds.has(id)]),
+    );
+  })();
+
+  pendingPreload = { ids, promise };
+  promise.finally(() => {
+    if (pendingPreload?.promise === promise) pendingPreload = null;
+  });
+
+  return promise;
 }

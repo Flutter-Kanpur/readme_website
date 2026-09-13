@@ -16,10 +16,16 @@ const NAV_LINKS = [
 ];
 
 function isNavLinkActive(pathname, link) {
+  // With basePath set, usePathname() reports "" (not "/") for the exact
+  // basePath root — normalize so Home still matches.
+  const normalizedPathname = pathname || "/";
   if (link.matchPrefix) {
-    return pathname === link.href || pathname?.startsWith(`${link.href}/`);
+    return (
+      normalizedPathname === link.href ||
+      normalizedPathname.startsWith(`${link.href}/`)
+    );
   }
-  return pathname === link.href;
+  return normalizedPathname === link.href;
 }
 
 function getDisplayName(user) {

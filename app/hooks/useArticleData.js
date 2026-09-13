@@ -17,12 +17,16 @@ export function useArticlesData(activeFilter, initialData = []) {
         ? initialData
         : [];
 
-  useEffect(() => {
-    if (!initialData.length || preloadedRef.current) return;
+  // Fired during render (not a useEffect) so the batched preload is already
+  // in flight before any child card mounts and runs its own effect — child
+  // effects fire before a parent's useEffect, which was defeating this
+  // batch (see likeCache.js getPendingPreload). Fire-and-forget, ref-guarded,
+  // no state write: safe under Strict Mode's double-render.
+  if (initialData.length && !preloadedRef.current) {
     preloadedRef.current = true;
     initialData.forEach(seedEngagementFromBlog);
     preloadLikedBlogIds(initialData.map((b) => b.blog_id)).catch(() => {});
-  }, [initialData]);
+  }
 
   useEffect(() => {
     // First For You paint: trust SSR (no duplicate feed egress).

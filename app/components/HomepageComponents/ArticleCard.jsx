@@ -124,6 +124,7 @@ export default function ArticleCard({ article }) {
                 src={coverImage}
                 alt={title}
                 fill
+                sizes="(min-width: 768px) 240px, 100vw"
                 className="rounded-[22px] object-cover shadow-sm group-hover:shadow-md transition-shadow"
               />
             </div>

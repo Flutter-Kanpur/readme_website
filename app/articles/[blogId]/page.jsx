@@ -137,6 +137,7 @@ export default async function ArticlePage({ params }) {
                   alt={blog.title}
                   width={1200}
                   height={630}
+                  sizes="(min-width: 1024px) 728px, (min-width: 768px) calc(100vw - 400px), calc(100vw - 32px)"
                   className="cover-image"
                   priority
                 />
