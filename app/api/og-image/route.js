@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import sharp from 'sharp';
 import { getDefaultShareImageUrl, isAllowedOgSource } from '@/app/lib/ogImageUrl';
 
 export const runtime = 'nodejs';
@@ -15,11 +14,26 @@ const CACHE_CONTROL =
   'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400';
 
 let cachedDefaultBuffer = null;
+let sharpModulePromise = null;
 
-// public/ is served as a static asset by Vercel, not bundled into this
-// route's serverless function — fs.readFile(process.cwd() + '/public/...')
-// reliably throws in production even though the file exists in the repo.
-// Fetch it over HTTP instead, the same way the browser/crawlers do.
+/**
+ * Lazy-load sharp. A top-level import crashes the whole Vercel function when
+ * the native binary fails to load (sharp 0.35 + Turbopack tracing), which
+ * made every /api/og-image request return HTML 500 — so WhatsApp/LinkedIn
+ * saw no preview even though og:image meta tags were correct.
+ */
+function loadSharp() {
+  if (!sharpModulePromise) {
+    sharpModulePromise = import('sharp')
+      .then((mod) => mod.default || mod)
+      .catch((error) => {
+        sharpModulePromise = null;
+        throw error;
+      });
+  }
+  return sharpModulePromise;
+}
+
 async function getDefaultOgBuffer() {
   if (cachedDefaultBuffer) return cachedDefaultBuffer;
   const res = await fetch(getDefaultShareImageUrl(), { cache: 'no-store' });
@@ -51,7 +65,8 @@ async function fallbackJpegResponse(reason, error) {
     return jpegResponse(await getDefaultOgBuffer());
   } catch (fallbackError) {
     console.error('og-image default asset missing:', fallbackError);
-    return new NextResponse('Failed to generate preview image', { status: 500 });
+    // Last resort: redirect to the static asset (CDN serves it reliably).
+    return NextResponse.redirect(getDefaultShareImageUrl(), 302);
   }
 }
 
@@ -88,7 +103,8 @@ async function fetchUpstream(src) {
   throw lastError || new Error('Upstream fetch failed');
 }
 
-function renderOgJpeg(input, quality) {
+async function renderOgJpeg(input, quality) {
+  const sharp = await loadSharp();
   return sharp(input)
     .rotate()
     .resize(OG_WIDTH, OG_HEIGHT, { fit: 'cover', position: 'centre' })

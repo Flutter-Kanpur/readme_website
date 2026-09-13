@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   // root (/.well-known/*). Handled by proxy.js + vercel.json (Next forbids
   // basePath:false rewrites to internal destinations).
   basePath: "/blogs",
+  // Keep sharp's native binaries out of the Turbopack/webpack graph so the
+  // /api/og-image route can load on Vercel (top-level sharp imports 500 there).
+  serverExternalPackages: ["sharp"],
   async redirects() {
     return [
       {
