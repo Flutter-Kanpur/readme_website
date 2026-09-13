@@ -38,7 +38,7 @@ export async function generateMetadata({ params }) {
 
   const { title, description, cover, url, publishedTime, modifiedTime } =
     getArticleShareFields(blog);
-  const shareImage = cover ? resolveShareImageUrl(cover) : null;
+  const shareImage = resolveShareImageUrl(cover);
   const authorName = data.author?.name;
 
   return {
@@ -56,25 +56,21 @@ export async function generateMetadata({ params }) {
       ...(publishedTime ? { publishedTime } : {}),
       ...(modifiedTime ? { modifiedTime } : {}),
       ...(authorName ? { authors: [authorName] } : {}),
-      ...(shareImage
-        ? {
-            images: [
-              {
-                url: shareImage,
-                width: 1200,
-                height: 630,
-                alt: title,
-                type: "image/jpeg",
-              },
-            ],
-          }
-        : {}),
+      images: [
+        {
+          url: shareImage,
+          width: 1200,
+          height: 630,
+          alt: title,
+          type: "image/jpeg",
+        },
+      ],
     },
     twitter: {
-      card: shareImage ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
-      ...(shareImage ? { images: [shareImage] } : {}),
+      images: [shareImage],
     },
   };
 }

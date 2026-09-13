@@ -1,12 +1,15 @@
 import { withBasePath } from '@/app/lib/basePath';
 import { getArticlePath } from '@/app/lib/blogSlug';
 import {
+  getSiteOrigin,
+  resolveArticleShareImage,
+} from '@/app/lib/ogImageUrl';
+import {
   buildExcerpt,
   sanitizeCoverImage,
 } from '@/app/lib/supabase/queries';
 
-const SITE_ORIGIN = 'https://readme.flutterkanpur.in';
-const PUBLISHER_LOGO = `${SITE_ORIGIN}/blogs/icon.png`;
+const PUBLISHER_LOGO_PATH = '/blogs/icon.png';
 
 export function getArticleShareFields(blog) {
   const title = blog.title?.trim() || 'Untitled';
@@ -15,7 +18,8 @@ export function getArticleShareFields(blog) {
     buildExcerpt(blog.content, 160) ||
     'Read this story on Readme.';
   const cover = sanitizeCoverImage(blog.cover_image);
-  const url = `${SITE_ORIGIN}${withBasePath(getArticlePath(blog))}`;
+  const origin = getSiteOrigin();
+  const url = `${origin}${withBasePath(getArticlePath(blog))}`;
   const publishedTime = blog.published_at ?? blog.created_at ?? undefined;
   const modifiedTime = blog.published_at ?? blog.created_at ?? undefined;
 
@@ -32,13 +36,14 @@ export function getArticleShareFields(blog) {
 function mapAuthorPerson(author) {
   if (!author?.name) return null;
 
+  const origin = getSiteOrigin();
   const person = {
     '@type': 'Person',
     name: author.name,
   };
 
   if (author.authorId) {
-    person.url = `${SITE_ORIGIN}/blogs/profile/${author.authorId}`;
+    person.url = `${origin}/blogs/profile/${author.authorId}`;
   }
 
   return person;
@@ -47,6 +52,8 @@ function mapAuthorPerson(author) {
 export function buildArticleJsonLd({ blog, author, coauthors = [] }) {
   const { title, description, cover, url, publishedTime, modifiedTime } =
     getArticleShareFields(blog);
+  const shareImage = resolveArticleShareImage(cover);
+  const origin = getSiteOrigin();
 
   const authors = [author, ...coauthors]
     .map(mapAuthorPerson)
@@ -64,7 +71,7 @@ export function buildArticleJsonLd({ blog, author, coauthors = [] }) {
     },
     ...(publishedTime ? { datePublished: publishedTime } : {}),
     ...(modifiedTime ? { dateModified: modifiedTime } : {}),
-    ...(cover ? { image: [cover] } : {}),
+    image: [shareImage],
     ...(authors.length === 1
       ? { author: authors[0] }
       : authors.length > 1
@@ -73,10 +80,10 @@ export function buildArticleJsonLd({ blog, author, coauthors = [] }) {
     publisher: {
       '@type': 'Organization',
       name: 'Readme',
-      url: SITE_ORIGIN,
+      url: origin,
       logo: {
         '@type': 'ImageObject',
-        url: PUBLISHER_LOGO,
+        url: `${origin}${PUBLISHER_LOGO_PATH}`,
       },
     },
   };

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { readFile } from 'fs/promises';
+import path from 'path';
 import sharp from 'sharp';
 import { isAllowedOgSource } from '@/app/lib/ogImageUrl';
 
@@ -8,21 +10,96 @@ export const dynamic = 'force-dynamic';
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
 const OG_TARGET_BYTES = 500 * 1024;
+const FETCH_TIMEOUT_MS = 8000;
+const FETCH_RETRIES = 2;
+const MAX_INPUT_BYTES = 8 * 1024 * 1024;
+const CACHE_CONTROL =
+  'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400';
+
+let cachedDefaultBuffer = null;
+
+async function getDefaultOgBuffer() {
+  if (cachedDefaultBuffer) return cachedDefaultBuffer;
+  const filePath = path.join(process.cwd(), 'public', 'assets', 'og-default.jpg');
+  cachedDefaultBuffer = await readFile(filePath);
+  return cachedDefaultBuffer;
+}
+
+function jpegResponse(buffer) {
+  return new NextResponse(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/jpeg',
+      'Content-Length': String(buffer.length),
+      'Cache-Control': CACHE_CONTROL,
+    },
+  });
+}
+
+async function fallbackJpegResponse(reason, error) {
+  if (error) {
+    console.error('og-image fallback:', reason, error);
+  } else {
+    console.error('og-image fallback:', reason);
+  }
+  try {
+    return jpegResponse(await getDefaultOgBuffer());
+  } catch (fallbackError) {
+    console.error('og-image default asset missing:', fallbackError);
+    return new NextResponse('Failed to generate preview image', { status: 500 });
+  }
+}
+
+async function fetchUpstream(src) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= FETCH_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const res = await fetch(src, {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        lastError = new Error(`Upstream HTTP ${res.status}`);
+        continue;
+      }
+      const input = Buffer.from(await res.arrayBuffer());
+      if (input.length > MAX_INPUT_BYTES) {
+        throw new Error(`Upstream image too large: ${input.length} bytes`);
+      }
+      return input;
+    } catch (error) {
+      lastError = error;
+      if (attempt < FETCH_RETRIES) {
+        await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  throw lastError || new Error('Upstream fetch failed');
+}
+
+function renderOgJpeg(input, quality) {
+  return sharp(input)
+    .rotate()
+    .resize(OG_WIDTH, OG_HEIGHT, { fit: 'cover', position: 'centre' })
+    .jpeg({ quality, mozjpeg: true })
+    .toBuffer();
+}
 
 export async function GET(request) {
   const src = request.nextUrl.searchParams.get('src');
 
   if (!src || !isAllowedOgSource(src)) {
-    return new NextResponse('Invalid image source', { status: 400 });
+    return fallbackJpegResponse(src ? 'invalid source' : 'missing source');
   }
 
   try {
-    const res = await fetch(src, { cache: 'no-store' });
-    if (!res.ok) {
-      return new NextResponse('Image not found', { status: 404 });
-    }
-
-    const input = Buffer.from(await res.arrayBuffer());
+    const input = await fetchUpstream(src);
 
     let quality = 82;
     let output = await renderOgJpeg(input, quality);
@@ -32,25 +109,8 @@ export async function GET(request) {
       output = await renderOgJpeg(input, quality);
     }
 
-    // Uint8Array avoids UTF-8 corruption of binary JPEG on some runtimes.
-    return new NextResponse(new Uint8Array(output), {
-      status: 200,
-      headers: {
-        'Content-Type': 'image/jpeg',
-        'Content-Length': String(output.length),
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
-    });
+    return jpegResponse(output);
   } catch (error) {
-    console.error('og-image error:', error);
-    return new NextResponse('Failed to generate preview image', { status: 500 });
+    return fallbackJpegResponse('fetch or sharp failed', error);
   }
-}
-
-function renderOgJpeg(input, quality) {
-  return sharp(input)
-    .rotate()
-    .resize(OG_WIDTH, OG_HEIGHT, { fit: 'cover', position: 'centre' })
-    .jpeg({ quality, mozjpeg: true })
-    .toBuffer();
 }

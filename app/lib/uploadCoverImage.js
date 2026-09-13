@@ -3,6 +3,8 @@
  * base64 strings in the blogs table (which breaks Vercel static page limits).
  */
 
+import { isAllowedOgSource } from '@/app/lib/ogImageUrl';
+
 const BUCKET_MAX_BYTES = 5 * 1024 * 1024;
 const UPLOAD_TARGET_BYTES = 4 * 1024 * 1024;
 const MAX_DIMENSION = 1600;
@@ -62,14 +64,25 @@ async function compressImageForUpload(blob) {
   }
 }
 
+function assertAllowlistedCoverUrl(url) {
+  if (!isAllowedOgSource(url)) {
+    throw new Error(
+      'Cover image must be uploaded to Readme storage. External image URLs are not supported for sharing.',
+    );
+  }
+  return url;
+}
+
 export async function resolveCoverImageUrl(coverImage, userId, supabase) {
   if (!coverImage || typeof coverImage !== 'string') return null;
 
   const trimmed = coverImage.trim();
   if (!trimmed) return null;
 
-  // Already a remote URL — keep as-is.
-  if (!trimmed.startsWith('data:')) return trimmed;
+  // Already a remote URL — only allow Supabase covers for crawler-safe shares.
+  if (!trimmed.startsWith('data:')) {
+    return assertAllowlistedCoverUrl(trimmed);
+  }
 
   try {
     const res = await fetch(trimmed);
@@ -107,7 +120,7 @@ export async function resolveCoverImageUrl(coverImage, userId, supabase) {
     }
 
     const { data } = supabase.storage.from('blog-covers').getPublicUrl(path);
-    return data.publicUrl;
+    return assertAllowlistedCoverUrl(data.publicUrl);
   } catch (err) {
     if (err instanceof Error) throw err;
     throw new Error('Cover upload failed. Please try a different image.');
