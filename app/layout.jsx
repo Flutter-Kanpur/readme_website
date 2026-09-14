@@ -1,5 +1,6 @@
 import { Google_Sans } from "next/font/google";
 import "./globals.css";
+import ScrollToTopOnNavigate from "@/components/ScrollToTopOnNavigate";
 
 const googleSans = Google_Sans({
   variable: "--font-google-sans",
@@ -55,6 +56,7 @@ export default function RootLayout({ children }) {
       className={googleSans.variable}
     >
       <body className={`${googleSans.className} antialiased`}>
+        <ScrollToTopOnNavigate />
         <div id="app-scroll">
           {children}
         </div>
