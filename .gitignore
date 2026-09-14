@@ -37,6 +37,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# one-off backfill scripts back up original row content here before
+# overwriting it — can contain multi-MB blobs, never commit
+/scripts/backfill-backups/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
