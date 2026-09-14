@@ -16,6 +16,7 @@ import {
   canPublishInCommunity,
 } from "@/app/lib/supabase/communities";
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
+import { resolveContentImageUrls } from "@/app/lib/uploadContentImages";
 import { resolveUniqueBlogSlug } from "@/app/lib/supabase/blogSlugs";
 import { normalizeTags } from "@/app/lib/normalizeTags";
 import { revalidateFeed } from "@/app/lib/revalidateFeed";
@@ -146,10 +147,15 @@ export default function EditPage({ params }) {
         user.id,
         supabase,
       );
+      const resolvedContent = await resolveContentImageUrls(
+        content,
+        user.id,
+        supabase,
+      );
 
       const updatePayload = {
           title: title.trim(),
-          content,
+          content: resolvedContent,
           category,
           tags: normalizeTags(tags),
           cover_image,

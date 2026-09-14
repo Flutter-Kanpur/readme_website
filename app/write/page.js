@@ -15,6 +15,7 @@ import {
   canPublishInCommunity,
 } from "@/app/lib/supabase/communities";
 import { resolveCoverImageUrl } from "@/app/lib/uploadCoverImage";
+import { resolveContentImageUrls } from "@/app/lib/uploadContentImages";
 import { resolveUniqueBlogSlug } from "@/app/lib/supabase/blogSlugs";
 import { revalidateFeed } from "@/app/lib/revalidateFeed";
 import { normalizeTags } from "@/app/lib/normalizeTags";
@@ -89,10 +90,11 @@ export default function WritePage() {
     }
 
     const cover_image = await resolveCoverImageUrl(coverImage, user.id, supabase);
+    const resolvedContent = await resolveContentImageUrls(content, user.id, supabase);
 
     const payload = {
       title: title.trim(),
-      content,
+      content: resolvedContent,
       category,
       tags: normalizeTags(tags),
       cover_image,

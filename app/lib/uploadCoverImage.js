@@ -15,7 +15,7 @@ function canvasToJpegBlob(canvas, quality) {
   });
 }
 
-async function compressImageForUpload(blob) {
+export async function compressImageForUpload(blob) {
   if (typeof document === 'undefined') return blob;
   if (blob.size <= UPLOAD_TARGET_BYTES) return blob;
 
