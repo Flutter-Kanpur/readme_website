@@ -46,6 +46,19 @@
   margin-bottom: 2rem;
 }
 
+.communities-page__header--with-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.communities-page__create-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .communities-page__eyebrow {
   font-size: 0.6875rem;
   font-weight: 700;
@@ -73,6 +86,90 @@
   padding: 2rem;
   border: 1px dashed #d1d5db;
   border-radius: 16px;
+}
+
+.communities-create {
+  max-width: 36rem;
+}
+
+.communities-create__back {
+  display: inline-block;
+  font-size: 0.875rem;
+  color: #2563eb;
+  text-decoration: none;
+  margin-bottom: 1.5rem;
+}
+
+.communities-create__back:hover {
+  text-decoration: underline;
+}
+
+.communities-create__loading {
+  color: #6b7280;
+  padding: 2rem 0;
+}
+
+.communities-create__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.communities-create__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.communities-create__field > span {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.communities-create__field input,
+.communities-create__field textarea {
+  font: inherit;
+  font-size: 0.9375rem;
+  color: #111;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 0.75rem 0.875rem;
+  background: #fff;
+}
+
+.communities-create__field input:focus,
+.communities-create__field textarea:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
+  border-color: #60a5fa;
+}
+
+.communities-create__field textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.communities-create__hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.communities-create__error {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 0.75rem 0.875rem;
+}
+
+.communities-create__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }
 
 .communities-page__grid {

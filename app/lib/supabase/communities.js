@@ -66,6 +66,80 @@ export async function listCommunities() {
   return data ?? [];
 }
 
+/** Normalize a display name into a URL slug candidate. */
+export function slugifyCommunityName(name) {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+}
+
+export function isValidCommunitySlug(slug) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && slug.length >= 2 && slug.length <= 64;
+}
+
+/**
+ * Create a community and make the signed-in user its admin.
+ * Relies on RLS: communities_insert (created_by = auth.uid()) and
+ * community_members_insert (first member as admin).
+ */
+export async function createCommunity({ name, slug, description } = {}) {
+  const user = await getSafeUser();
+  if (!user) throw new Error('Sign in to create a community.');
+
+  const trimmedName = typeof name === 'string' ? name.trim() : '';
+  if (!trimmedName) throw new Error('Community name is required.');
+  if (trimmedName.length > 80) throw new Error('Community name must be under 80 characters.');
+
+  const normalizedSlug = slugifyCommunityName(slug || trimmedName);
+  if (!isValidCommunitySlug(normalizedSlug)) {
+    throw new Error(
+      'Slug must be 2–64 characters: lowercase letters, numbers, and hyphens only.',
+    );
+  }
+
+  const trimmedDescription =
+    typeof description === 'string' ? description.trim().slice(0, 500) : '';
+
+  const existing = await getCommunityBySlug(normalizedSlug);
+  if (existing) {
+    throw new Error('That slug is already taken. Choose another.');
+  }
+
+  const { data: community, error: insertError } = await supabase
+    .from('communities')
+    .insert({
+      slug: normalizedSlug,
+      name: trimmedName,
+      description: trimmedDescription || null,
+      created_by: user.id,
+    })
+    .select('*')
+    .single();
+
+  if (insertError) {
+    if (insertError.code === '23505') {
+      throw new Error('That slug is already taken. Choose another.');
+    }
+    throw insertError;
+  }
+
+  const { error: memberError } = await supabase.from('community_members').insert({
+    community_id: community.id,
+    user_id: user.id,
+    role: 'admin',
+  });
+
+  if (memberError && memberError.code !== '23505') {
+    // Community row exists; surface membership failure so the owner can retry via ensureCreatorAdminMembership.
+    throw memberError;
+  }
+
+  return community;
+}
+
 export async function getUserCommunities(userId) {
   if (!userId) return [];
 

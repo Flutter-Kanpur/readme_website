@@ -48,7 +48,10 @@ export default function Home() {
 
       setMessage({ type: "success", text: "Signed in successfully!" });
       setIsLoggedIn(true);
-      router.push("/");
+      const next = new URLSearchParams(window.location.search).get("next");
+      const safeNext =
+        next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+      router.push(safeNext);
     } catch (error) {
       setMessage({
         type: "error",

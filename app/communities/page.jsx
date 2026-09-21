@@ -16,15 +16,27 @@ export default async function CommunitiesPage() {
     <main className="communities-page">
       <Navbar />
       <div className="communities-page__inner">
-        <header className="communities-page__header">
-          <p className="communities-page__eyebrow">Communities</p>
-          <h1>Write together</h1>
-          <p>Join a community, co-author posts, and publish under a shared brand.</p>
+        <header className="communities-page__header communities-page__header--with-cta">
+          <div>
+            <p className="communities-page__eyebrow">Communities</p>
+            <h1>Write together</h1>
+            <p>Join a community, co-author posts, and publish under a shared brand.</p>
+          </div>
+          <Link
+            href="/communities/new"
+            className="community-profile__btn community-profile__btn--primary communities-page__create-btn"
+          >
+            Create community
+          </Link>
         </header>
 
         {communities.length === 0 ? (
           <p className="communities-page__empty">
-            No communities yet. Run the communities migration in Supabase to seed Flutter Kanpur.
+            No communities yet.{" "}
+            <Link href="/communities/new" className="text-blue-600 hover:underline">
+              Create the first one
+            </Link>
+            .
           </p>
         ) : (
           <ul className="communities-page__grid">
