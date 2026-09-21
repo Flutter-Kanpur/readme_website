@@ -10,6 +10,7 @@ import {
   createCommunity,
   slugifyCommunityName,
 } from '@/app/lib/supabase/communities';
+import { revalidateCommunities } from '@/app/lib/revalidateCommunities';
 import '../communities.css';
 
 export default function CreateCommunityPage() {
@@ -63,7 +64,9 @@ export default function CreateCommunityPage() {
         slug: slugTouched ? slug : previewSlug,
         description,
       });
+      await revalidateCommunities();
       router.push(`/communities/${community.slug}/dashboard`);
+      router.refresh();
     } catch (err) {
       setMessage(err.message || 'Could not create community.');
       setSubmitting(false);

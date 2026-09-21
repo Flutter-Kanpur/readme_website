@@ -4,6 +4,9 @@ import Footer from "@/components/Footer/Footer";
 import { listCommunities } from "@/app/lib/supabase/communities";
 import "./communities.css";
 
+// Always fetch fresh — new communities must show up immediately after create.
+export const dynamic = "force-dynamic";
+
 export default async function CommunitiesPage() {
   let communities = [];
   try {
